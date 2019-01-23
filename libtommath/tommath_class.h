@@ -38,9 +38,7 @@
 #define BN_MP_DR_REDUCE_C
 #define BN_MP_DR_SETUP_C
 #define BN_MP_EXCH_C
-#define BN_MP_EXPORT_C
 #define BN_MP_EXPT_D_C
-#define BN_MP_EXPT_D_EX_C
 #define BN_MP_EXPTMOD_C
 #define BN_MP_EXPTMOD_FAST_C
 #define BN_MP_EXTEUCLID_C
@@ -48,10 +46,7 @@
 #define BN_MP_FWRITE_C
 #define BN_MP_GCD_C
 #define BN_MP_GET_INT_C
-#define BN_MP_GET_LONG_C
-#define BN_MP_GET_LONG_LONG_C
 #define BN_MP_GROW_C
-#define BN_MP_IMPORT_C
 #define BN_MP_INIT_C
 #define BN_MP_INIT_COPY_C
 #define BN_MP_INIT_MULTI_C
@@ -78,7 +73,6 @@
 #define BN_MP_MUL_D_C
 #define BN_MP_MULMOD_C
 #define BN_MP_N_ROOT_C
-#define BN_MP_N_ROOT_EX_C
 #define BN_MP_NEG_C
 #define BN_MP_OR_C
 #define BN_MP_PRIME_FERMAT_C
@@ -105,14 +99,11 @@
 #define BN_MP_RSHD_C
 #define BN_MP_SET_C
 #define BN_MP_SET_INT_C
-#define BN_MP_SET_LONG_C
-#define BN_MP_SET_LONG_LONG_C
 #define BN_MP_SHRINK_C
 #define BN_MP_SIGNED_BIN_SIZE_C
 #define BN_MP_SQR_C
 #define BN_MP_SQRMOD_C
 #define BN_MP_SQRT_C
-#define BN_MP_SQRTMOD_PRIME_C
 #define BN_MP_SUB_C
 #define BN_MP_SUB_D_C
 #define BN_MP_SUBMOD_C
@@ -282,9 +273,12 @@
 #if defined(BN_MP_DIV_2D_C)
    #define BN_MP_COPY_C
    #define BN_MP_ZERO_C
+   #define BN_MP_INIT_C
    #define BN_MP_MOD_2D_C
+   #define BN_MP_CLEAR_C
    #define BN_MP_RSHD_C
    #define BN_MP_CLAMP_C
+   #define BN_MP_EXCH_C
 #endif
 
 #if defined(BN_MP_DIV_3_C)
@@ -321,23 +315,12 @@
 #if defined(BN_MP_EXCH_C)
 #endif
 
-#if defined(BN_MP_EXPORT_C)
-   #define BN_MP_INIT_COPY_C
-   #define BN_MP_COUNT_BITS_C
-   #define BN_MP_DIV_2D_C
-   #define BN_MP_CLEAR_C
-#endif
-
 #if defined(BN_MP_EXPT_D_C)
-   #define BN_MP_EXPT_D_EX_C
-#endif
-
-#if defined(BN_MP_EXPT_D_EX_C)
    #define BN_MP_INIT_COPY_C
    #define BN_MP_SET_C
-   #define BN_MP_MUL_C
-   #define BN_MP_CLEAR_C
    #define BN_MP_SQR_C
+   #define BN_MP_CLEAR_C
+   #define BN_MP_MUL_C
 #endif
 
 #if defined(BN_MP_EXPTMOD_C)
@@ -356,7 +339,7 @@
 
 #if defined(BN_MP_EXPTMOD_FAST_C)
    #define BN_MP_COUNT_BITS_C
-   #define BN_MP_INIT_SIZE_C
+   #define BN_MP_INIT_C
    #define BN_MP_CLEAR_C
    #define BN_MP_MONTGOMERY_SETUP_C
    #define BN_FAST_MP_MONTGOMERY_REDUCE_C
@@ -404,6 +387,7 @@
 #if defined(BN_MP_GCD_C)
    #define BN_MP_ISZERO_C
    #define BN_MP_ABS_C
+   #define BN_MP_ZERO_C
    #define BN_MP_INIT_COPY_C
    #define BN_MP_CNT_LSB_C
    #define BN_MP_DIV_2D_C
@@ -417,28 +401,14 @@
 #if defined(BN_MP_GET_INT_C)
 #endif
 
-#if defined(BN_MP_GET_LONG_C)
-#endif
-
-#if defined(BN_MP_GET_LONG_LONG_C)
-#endif
-
 #if defined(BN_MP_GROW_C)
-#endif
-
-#if defined(BN_MP_IMPORT_C)
-   #define BN_MP_ZERO_C
-   #define BN_MP_MUL_2D_C
-   #define BN_MP_CLAMP_C
 #endif
 
 #if defined(BN_MP_INIT_C)
 #endif
 
 #if defined(BN_MP_INIT_COPY_C)
-   #define BN_MP_INIT_SIZE_C
    #define BN_MP_COPY_C
-   #define BN_MP_CLEAR_C
 #endif
 
 #if defined(BN_MP_INIT_MULTI_C)
@@ -464,7 +434,6 @@
 #if defined(BN_MP_INVMOD_C)
    #define BN_MP_ISZERO_C
    #define BN_MP_ISODD_C
-   #define BN_MP_CMP_D_C
    #define BN_FAST_MP_INVMOD_C
    #define BN_MP_INVMOD_SLOW_C
 #endif
@@ -499,7 +468,6 @@
 #endif
 
 #if defined(BN_MP_JACOBI_C)
-   #define BN_MP_ISNEG_C
    #define BN_MP_CMP_D_C
    #define BN_MP_ISZERO_C
    #define BN_MP_INIT_COPY_C
@@ -513,9 +481,8 @@
    #define BN_MP_MUL_C
    #define BN_MP_INIT_SIZE_C
    #define BN_MP_CLAMP_C
-   #define BN_S_MP_ADD_C
+   #define BN_MP_SUB_C
    #define BN_MP_ADD_C
-   #define BN_S_MP_SUB_C
    #define BN_MP_LSHD_C
    #define BN_MP_CLEAR_C
 #endif
@@ -524,8 +491,8 @@
    #define BN_MP_INIT_SIZE_C
    #define BN_MP_CLAMP_C
    #define BN_MP_SQR_C
+   #define BN_MP_SUB_C
    #define BN_S_MP_ADD_C
-   #define BN_S_MP_SUB_C
    #define BN_MP_LSHD_C
    #define BN_MP_ADD_C
    #define BN_MP_CLEAR_C
@@ -546,12 +513,11 @@
 #endif
 
 #if defined(BN_MP_MOD_C)
-   #define BN_MP_INIT_SIZE_C
+   #define BN_MP_INIT_C
    #define BN_MP_DIV_C
    #define BN_MP_CLEAR_C
-   #define BN_MP_ISZERO_C
-   #define BN_MP_EXCH_C
    #define BN_MP_ADD_C
+   #define BN_MP_EXCH_C
 #endif
 
 #if defined(BN_MP_MOD_2D_C)
@@ -610,21 +576,17 @@
 #endif
 
 #if defined(BN_MP_MULMOD_C)
-   #define BN_MP_INIT_SIZE_C
+   #define BN_MP_INIT_C
    #define BN_MP_MUL_C
    #define BN_MP_CLEAR_C
    #define BN_MP_MOD_C
 #endif
 
 #if defined(BN_MP_N_ROOT_C)
-   #define BN_MP_N_ROOT_EX_C
-#endif
-
-#if defined(BN_MP_N_ROOT_EX_C)
    #define BN_MP_INIT_C
    #define BN_MP_SET_C
    #define BN_MP_COPY_C
-   #define BN_MP_EXPT_D_EX_C
+   #define BN_MP_EXPT_D_C
    #define BN_MP_MUL_C
    #define BN_MP_SUB_C
    #define BN_MP_MUL_D_C
@@ -705,9 +667,9 @@
 #endif
 
 #if defined(BN_MP_RADIX_SIZE_C)
-   #define BN_MP_ISZERO_C
    #define BN_MP_COUNT_BITS_C
    #define BN_MP_INIT_COPY_C
+   #define BN_MP_ISZERO_C
    #define BN_MP_DIV_D_C
    #define BN_MP_CLEAR_C
 #endif
@@ -725,6 +687,7 @@
 #if defined(BN_MP_READ_RADIX_C)
    #define BN_MP_ZERO_C
    #define BN_MP_S_RMAP_C
+   #define BN_MP_RADIX_SMAP_C
    #define BN_MP_MUL_D_C
    #define BN_MP_ADD_D_C
    #define BN_MP_ISZERO_C
@@ -825,12 +788,6 @@
    #define BN_MP_CLAMP_C
 #endif
 
-#if defined(BN_MP_SET_LONG_C)
-#endif
-
-#if defined(BN_MP_SET_LONG_LONG_C)
-#endif
-
 #if defined(BN_MP_SHRINK_C)
 #endif
 
@@ -864,25 +821,6 @@
    #define BN_MP_CMP_MAG_C
    #define BN_MP_EXCH_C
    #define BN_MP_CLEAR_C
-#endif
-
-#if defined(BN_MP_SQRTMOD_PRIME_C)
-   #define BN_MP_CMP_D_C
-   #define BN_MP_ZERO_C
-   #define BN_MP_JACOBI_C
-   #define BN_MP_INIT_MULTI_C
-   #define BN_MP_MOD_D_C
-   #define BN_MP_ADD_D_C
-   #define BN_MP_DIV_2_C
-   #define BN_MP_EXPTMOD_C
-   #define BN_MP_COPY_C
-   #define BN_MP_SUB_D_C
-   #define BN_MP_ISEVEN_C
-   #define BN_MP_SET_INT_C
-   #define BN_MP_SQRMOD_C
-   #define BN_MP_MULMOD_C
-   #define BN_MP_SET_C
-   #define BN_MP_CLEAR_MULTI_C
 #endif
 
 #if defined(BN_MP_SUB_C)
@@ -1062,12 +1000,6 @@
 #undef BN_MP_TOOM_MUL_C
 #undef BN_MP_TOOM_SQR_C
 
-#include "dbmalloc.h"
-#define XMALLOC m_malloc
-#define XFREE m_free_direct
-#define XREALLOC m_realloc
-#define XCALLOC m_calloc
-
-/* $Source$ */
-/* $Revision$ */
-/* $Date$ */
+/* $Source: /cvs/libtom/libtommath/tommath_class.h,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2005/07/28 11:59:32 $ */

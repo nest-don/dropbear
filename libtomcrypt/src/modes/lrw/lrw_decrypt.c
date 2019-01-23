@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -44,6 +46,6 @@ int lrw_decrypt(const unsigned char *ct, unsigned char *pt, unsigned long len, s
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/lrw/lrw_decrypt.c,v $ */
+/* $Revision: 1.8 $ */
+/* $Date: 2006/06/29 01:53:13 $ */

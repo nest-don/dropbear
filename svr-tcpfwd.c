@@ -35,7 +35,7 @@
 #include "auth.h"
 #include "netio.h"
 
-#if !DROPBEAR_SVR_REMOTETCPFWD
+#ifndef ENABLE_SVR_REMOTETCPFWD
 
 /* This is better than SSH_MSG_UNIMPLEMENTED */
 void recv_msg_global_request_remotetcp() {
@@ -44,18 +44,17 @@ void recv_msg_global_request_remotetcp() {
 }
 
 /* */
-#endif /* !DROPBEAR_SVR_REMOTETCPFWD */
+#endif /* !ENABLE_SVR_REMOTETCPFWD */
 
-static int svr_cancelremotetcp(void);
-static int svr_remotetcpreq(int *allocated_listen_port);
+static int svr_cancelremotetcp();
+static int svr_remotetcpreq();
 static int newtcpdirect(struct Channel * channel);
 
-#if DROPBEAR_SVR_REMOTETCPFWD
+#ifdef ENABLE_SVR_REMOTETCPFWD
 static const struct ChanType svr_chan_tcpremote = {
 	1, /* sepfds */
 	"forwarded-tcpip",
 	tcp_prio_inithandler,
-	NULL,
 	NULL,
 	NULL,
 	NULL
@@ -87,16 +86,7 @@ void recv_msg_global_request_remotetcp() {
 	}
 
 	if (strcmp("tcpip-forward", reqname) == 0) {
-		int allocated_listen_port = 0;
-		ret = svr_remotetcpreq(&allocated_listen_port);
-		/* client expects-port-number-to-make-use-of-server-allocated-ports */
-		if (DROPBEAR_SUCCESS == ret) {
-			CHECKCLEARTOWRITE();
-			buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_SUCCESS);
-			buf_putint(ses.writepayload, allocated_listen_port);
-			encrypt_packet();
-			wantreply = 0; /* avoid out: below sending another reply */
-		}
+		ret = svr_remotetcpreq();
 	} else if (strcmp("cancel-tcpip-forward", reqname) == 0) {
 		ret = svr_cancelremotetcp();
 	} else {
@@ -117,7 +107,7 @@ out:
 	TRACE(("leave recv_msg_global_request"))
 }
 
-static int matchtcp(const void* typedata1, const void* typedata2) {
+static int matchtcp(void* typedata1, void* typedata2) {
 
 	const struct TCPListener *info1 = (struct TCPListener*)typedata1;
 	const struct TCPListener *info2 = (struct TCPListener*)typedata2;
@@ -162,14 +152,13 @@ out:
 	return ret;
 }
 
-static int svr_remotetcpreq(int *allocated_listen_port) {
+static int svr_remotetcpreq() {
 
 	int ret = DROPBEAR_FAILURE;
 	char * request_addr = NULL;
 	unsigned int addrlen;
 	struct TCPListener *tcpinfo = NULL;
 	unsigned int port;
-	struct Listener *listener = NULL;
 
 	TRACE(("enter remotetcpreq"))
 
@@ -181,16 +170,19 @@ static int svr_remotetcpreq(int *allocated_listen_port) {
 
 	port = buf_getint(ses.payload);
 
-	if (port != 0) {
-		if (port < 1 || port > 65535) {
-			TRACE(("invalid port: %d", port))
-			goto out;
-		}
+	if (port == 0) {
+		dropbear_log(LOG_INFO, "Server chosen tcpfwd ports are unsupported");
+		goto out;
+	}
 
-		if (!ses.allowprivport && port < IPPORT_RESERVED) {
-			TRACE(("can't assign port < 1024 for non-root"))
-			goto out;
-		}
+	if (port < 1 || port > 65535) {
+		TRACE(("invalid port: %d", port))
+		goto out;
+	}
+
+	if (!ses.allowprivport && port < IPPORT_RESERVED) {
+		TRACE(("can't assign port < 1024 for non-root"))
+		goto out;
 	}
 
 	tcpinfo = (struct TCPListener*)m_malloc(sizeof(struct TCPListener));
@@ -202,19 +194,15 @@ static int svr_remotetcpreq(int *allocated_listen_port) {
 
 	tcpinfo->request_listenaddr = request_addr;
 	if (!opts.listen_fwd_all || (strcmp(request_addr, "localhost") == 0) ) {
-		/* NULL means "localhost only" */
+        /* NULL means "localhost only" */
 		tcpinfo->listenaddr = NULL;
 	}
 	else
 	{
-		tcpinfo->listenaddr = m_strdup(request_addr);
+		tcpinfo->listenaddr = request_addr;
 	}
 
-	ret = listen_tcpfwd(tcpinfo, &listener);
-	if (DROPBEAR_SUCCESS == ret) {
-		tcpinfo->listenport = get_sock_port(listener->socks[0]);
-		*allocated_listen_port = tcpinfo->listenport;
-	}
+	ret = listen_tcpfwd(tcpinfo);
 
 out:
 	if (ret == DROPBEAR_FAILURE) {
@@ -223,15 +211,13 @@ out:
 		m_free(request_addr);
 		m_free(tcpinfo);
 	}
-
 	TRACE(("leave remotetcpreq"))
-
 	return ret;
 }
 
-#endif /* DROPBEAR_SVR_REMOTETCPFWD */
+#endif /* ENABLE_SVR_REMOTETCPFWD */
 
-#if DROPBEAR_SVR_LOCALTCPFWD
+#ifdef ENABLE_SVR_LOCALTCPFWD
 
 const struct ChanType svr_chan_tcpdirect = {
 	1, /* sepfds */
@@ -239,8 +225,7 @@ const struct ChanType svr_chan_tcpdirect = {
 	newtcpdirect, /* init */
 	NULL, /* checkclose */
 	NULL, /* reqhandler */
-	NULL, /* closehandler */
-	NULL /* cleanup */
+	NULL /* closehandler */
 };
 
 /* Called upon creating a new direct tcp channel (ie we connect out to an
@@ -284,8 +269,8 @@ static int newtcpdirect(struct Channel * channel) {
 		goto out;
 	}
 
-	snprintf(portstring, sizeof(portstring), "%u", destport);
-	channel->conn_pending = connect_remote(desthost, portstring, channel_connect_done, channel, NULL, NULL);
+	snprintf(portstring, sizeof(portstring), "%d", destport);
+	channel->conn_pending = connect_remote(desthost, portstring, channel_connect_done, channel);
 
 	channel->prio = DROPBEAR_CHANNEL_PRIO_UNKNOWABLE;
 	
@@ -298,4 +283,4 @@ out:
 	return err;
 }
 
-#endif /* DROPBEAR_SVR_LOCALTCPFWD */
+#endif /* ENABLE_SVR_LOCALTCPFWD */

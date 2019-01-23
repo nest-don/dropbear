@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -16,9 +18,9 @@
 #ifdef LTC_F8_MODE
 
 /**
-   Get the current initialization vector
-   @param IV   [out] The destination of the initialization vector
-   @param len  [in/out]  The max size and resulting size of the initialization vector
+   Get the current initial vector
+   @param IV   [out] The destination of the initial vector
+   @param len  [in/out]  The max size and resulting size of the initial vector
    @param f8   The F8 state
    @return CRYPT_OK if successful
 */
@@ -39,6 +41,6 @@ int f8_getiv(unsigned char *IV, unsigned long *len, symmetric_F8 *f8)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/f8/f8_getiv.c,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2006/06/16 22:49:25 $ */

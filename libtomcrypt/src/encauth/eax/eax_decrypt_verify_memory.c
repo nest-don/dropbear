@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 /**
@@ -13,7 +15,7 @@
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_EAX_MODE
+#ifdef EAX_MODE
 
 /**
    Decrypt a block of memory and verify the provided MAC tag with EAX
@@ -55,9 +57,6 @@ int eax_decrypt_verify_memory(int cipher,
    /* default to zero */
    *stat = 0;
 
-   /* limit taglen */
-   taglen = MIN(taglen, MAXBLOCKSIZE);
-
    /* allocate ram */
    buf = XMALLOC(taglen);
    eax = XMALLOC(sizeof(*eax));
@@ -78,17 +77,17 @@ int eax_decrypt_verify_memory(int cipher,
    if ((err = eax_decrypt(eax, ct, pt, ctlen)) != CRYPT_OK) {
       goto LBL_ERR;
    }
-
+ 
    buflen = taglen;
    if ((err = eax_done(eax, buf, &buflen)) != CRYPT_OK) {
       goto LBL_ERR;
    }
 
    /* compare tags */
-   if (buflen >= taglen && XMEM_NEQ(buf, tag, taglen) == 0) {
+   if (buflen >= taglen && XMEMCMP(buf, tag, taglen) == 0) {
       *stat = 1;
    }
-
+   
    err = CRYPT_OK;
 LBL_ERR:
 #ifdef LTC_CLEAN_STACK
@@ -104,6 +103,6 @@ LBL_ERR:
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/encauth/eax/eax_decrypt_verify_memory.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/11/01 09:28:17 $ */

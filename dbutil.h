@@ -29,11 +29,19 @@
 #include "includes.h"
 #include "buffer.h"
 #include "queue.h"
-#include "dbhelpers.h"
-#include "dbmalloc.h"
 
 #ifndef DISABLE_SYSLOG
-void startsyslog(const char *ident);
+void startsyslog();
+#endif
+
+#ifdef __GNUC__
+#define ATTRIB_PRINTF(fmt,args) __attribute__((format(printf, fmt, args))) 
+#define ATTRIB_NORETURN __attribute__((noreturn))
+#define ATTRIB_SENTINEL __attribute__((sentinel))
+#else
+#define ATTRIB_PRINTF(fmt,args)
+#define ATTRIB_NORETURN
+#define ATTRIB_SENTINEL
 #endif
 
 extern void (*_dropbear_exit)(int exitcode, const char* format, va_list param) ATTRIB_NORETURN;
@@ -46,29 +54,34 @@ void dropbear_log(int priority, const char* format, ...) ATTRIB_PRINTF(2,3) ;
 
 void fail_assert(const char* expr, const char* file, int line) ATTRIB_NORETURN;
 
-#if DEBUG_TRACE
+#ifdef DEBUG_TRACE
 void dropbear_trace(const char* format, ...) ATTRIB_PRINTF(1,2);
 void dropbear_trace2(const char* format, ...) ATTRIB_PRINTF(1,2);
 void printhex(const char * label, const unsigned char * buf, int len);
 void printmpint(const char *label, mp_int *mp);
-void debug_start_net(void);
+void debug_start_net();
 extern int debug_trace;
 #endif
 
 char * stripcontrol(const char * text);
 
-int spawn_command(void(*exec_fn)(const void *user_data), const void *exec_data,
+int spawn_command(void(*exec_fn)(void *user_data), void *exec_data,
 		int *writefd, int *readfd, int *errfd, pid_t *pid);
 void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell);
-#if ENABLE_CONNECT_UNIX
+#ifdef ENABLE_CONNECT_UNIX
 int connect_unix(const char* addr);
 #endif
 int buf_readfile(buffer* buf, const char* filename);
 int buf_getline(buffer * line, FILE * authfile);
 
 void m_close(int fd);
+void * m_malloc(size_t size);
+void * m_strdup(const char * str);
+void * m_realloc(void* ptr, size_t size);
+#define m_free(X) do {free(X); (X) = NULL;} while (0)
+void m_burn(void* data, unsigned int len);
 void setnonblocking(int fd);
-void disallow_core(void);
+void disallow_core();
 int m_str_to_uint(const char* str, unsigned int *val);
 
 /* Used to force mp_ints to be initialised */
@@ -82,19 +95,8 @@ int constant_time_memcmp(const void* a, const void *b, size_t n);
 
 /* Returns a time in seconds that doesn't go backwards - does not correspond to
 a real-world clock */
-time_t monotonic_now(void);
-/* Higher resolution clock_gettime(CLOCK_MONOTONIC) wrapper */
-void gettime_wrapper(struct timespec *now);
+time_t monotonic_now();
 
 char * expand_homedir_path(const char *inpath);
-
-void fsync_parent_dir(const char* fn);
-
-#if DROPBEAR_MSAN
-/* FD_ZERO seems to leave some memory uninitialized. clear it to avoid false positives */
-#define DROPBEAR_FD_ZERO(fds) do { memset((fds), 0x0, sizeof(fd_set)); FD_ZERO(fds); } while(0)
-#else
-#define DROPBEAR_FD_ZERO(fds) FD_ZERO(fds)
-#endif
 
 #endif /* DROPBEAR_DBUTIL_H_ */

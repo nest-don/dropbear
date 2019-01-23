@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 /**
@@ -13,7 +15,7 @@
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_EAX_MODE
+#ifdef EAX_MODE
 
 /**
    EAX encrypt and produce an authentication tag
@@ -51,15 +53,15 @@ int eax_encrypt_authenticate_memory(int cipher,
    eax = XMALLOC(sizeof(*eax));
 
    if ((err = eax_init(eax, cipher, key, keylen, nonce, noncelen, header, headerlen)) != CRYPT_OK) {
-      goto LBL_ERR;
+      goto LBL_ERR; 
    }
 
    if ((err = eax_encrypt(eax, pt, ct, ptlen)) != CRYPT_OK) {
-      goto LBL_ERR;
+      goto LBL_ERR; 
    }
-
+ 
    if ((err = eax_done(eax, tag, taglen)) != CRYPT_OK) {
-      goto LBL_ERR;
+      goto LBL_ERR; 
    }
 
    err = CRYPT_OK;
@@ -70,11 +72,11 @@ LBL_ERR:
 
    XFREE(eax);
 
-   return err;
+   return err;   
 }
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/encauth/eax/eax_encrypt_authenticate_memory.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/03/31 14:15:35 $ */

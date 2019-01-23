@@ -5,10 +5,12 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
-/**
+/** 
   @file omac_file.c
   OMAC1 support, process a file, Tom St Denis
 */
@@ -25,67 +27,57 @@
    @param outlen   [in/out] The max size and resulting size of the authentication tag
    @return CRYPT_OK if successful, CRYPT_NOP if file support has been disabled
 */
-int omac_file(int cipher,
+int omac_file(int cipher, 
               const unsigned char *key, unsigned long keylen,
-              const char *filename,
+              const char *filename, 
                     unsigned char *out, unsigned long *outlen)
 {
 #ifdef LTC_NO_FILE
    return CRYPT_NOP;
 #else
-   size_t x;
-   int err;
+   int err, x;
    omac_state omac;
    FILE *in;
-   unsigned char *buf;
+   unsigned char buf[512];
 
    LTC_ARGCHK(key      != NULL);
    LTC_ARGCHK(filename != NULL);
    LTC_ARGCHK(out      != NULL);
    LTC_ARGCHK(outlen   != NULL);
 
-   if ((buf = XMALLOC(LTC_FILE_READ_BUFSIZE)) == NULL) {
-      return CRYPT_MEM;
+   in = fopen(filename, "rb");
+   if (in == NULL) {
+      return CRYPT_FILE_NOTFOUND;
    }
 
    if ((err = omac_init(&omac, cipher, key, keylen)) != CRYPT_OK) {
-      goto LBL_ERR;
-   }
-
-   in = fopen(filename, "rb");
-   if (in == NULL) {
-      err = CRYPT_FILE_NOTFOUND;
-      goto LBL_ERR;
+      fclose(in);
+      return err;
    }
 
    do {
-      x = fread(buf, 1, LTC_FILE_READ_BUFSIZE, in);
-      if ((err = omac_process(&omac, buf, (unsigned long)x)) != CRYPT_OK) {
+      x = fread(buf, 1, sizeof(buf), in);
+      if ((err = omac_process(&omac, buf, x)) != CRYPT_OK) {
          fclose(in);
-         goto LBL_CLEANBUF;
+         return err;
       }
-   } while (x == LTC_FILE_READ_BUFSIZE);
+   } while (x == sizeof(buf));
+   fclose(in);
 
-   if (fclose(in) != 0) {
-      err = CRYPT_ERROR;
-      goto LBL_CLEANBUF;
+   if ((err = omac_done(&omac, out, outlen)) != CRYPT_OK) {
+      return err;
    }
 
-   err = omac_done(&omac, out, outlen);
-
-LBL_CLEANBUF:
-   zeromem(buf, LTC_FILE_READ_BUFSIZE);
-LBL_ERR:
 #ifdef LTC_CLEAN_STACK
-   zeromem(&omac, sizeof(omac_state));
+   zeromem(buf, sizeof(buf));
 #endif
-   XFREE(buf);
-   return err;
+
+   return CRYPT_OK;
 #endif
 }
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/mac/omac/omac_file.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/11/03 00:39:49 $ */

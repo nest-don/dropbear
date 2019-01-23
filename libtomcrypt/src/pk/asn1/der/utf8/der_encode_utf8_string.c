@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -35,7 +37,9 @@ int der_encode_utf8_string(const wchar_t *in,  unsigned long inlen,
 
    /* get the size */
    for (x = len = 0; x < inlen; x++) {
-       if (!der_utf8_valid_char(in[x])) return CRYPT_INVALID_ARG;
+       if (in[x] < 0 || in[x] > 0x1FFFF) { 
+          return CRYPT_INVALID_ARG;
+       }
        len += der_utf8_charsize(in[x]);
    }
 
@@ -53,7 +57,7 @@ int der_encode_utf8_string(const wchar_t *in,  unsigned long inlen,
 
    /* too big? */
    if (y > *outlen) {
-      *outlen = y;
+      *outlen = len;
       return CRYPT_BUFFER_OVERFLOW;
    }
 
@@ -61,33 +65,30 @@ int der_encode_utf8_string(const wchar_t *in,  unsigned long inlen,
    x = 0;
    out[x++] = 0x0C;
    if (len < 128) {
-      out[x++] = (unsigned char)len;
+      out[x++] = len;
    } else if (len < 256) {
       out[x++] = 0x81;
-      out[x++] = (unsigned char)len;
+      out[x++] = len;
    } else if (len < 65536UL) {
       out[x++] = 0x82;
-      out[x++] = (unsigned char)((len>>8)&255);
-      out[x++] = (unsigned char)(len&255);
+      out[x++] = (len>>8)&255;
+      out[x++] = len&255;
    } else if (len < 16777216UL) {
       out[x++] = 0x83;
-      out[x++] = (unsigned char)((len>>16)&255);
-      out[x++] = (unsigned char)((len>>8)&255);
-      out[x++] = (unsigned char)(len&255);
+      out[x++] = (len>>16)&255;
+      out[x++] = (len>>8)&255;
+      out[x++] = len&255;
    } else {
-       /* coverity[dead_error_line] */
       return CRYPT_INVALID_ARG;
    }
 
    /* store UTF8 */
    for (y = 0; y < inlen; y++) {
        switch (der_utf8_charsize(in[y])) {
-          case 1: out[x++] = (unsigned char)in[y]; break;
+          case 1: out[x++] = in[y]; break;
           case 2: out[x++] = 0xC0 | ((in[y] >> 6) & 0x1F);  out[x++] = 0x80 | (in[y] & 0x3F); break;
           case 3: out[x++] = 0xE0 | ((in[y] >> 12) & 0x0F); out[x++] = 0x80 | ((in[y] >> 6) & 0x3F); out[x++] = 0x80 | (in[y] & 0x3F); break;
-#if !defined(LTC_WCHAR_MAX) || LTC_WCHAR_MAX > 0xFFFF
           case 4: out[x++] = 0xF0 | ((in[y] >> 18) & 0x07); out[x++] = 0x80 | ((in[y] >> 12) & 0x3F); out[x++] = 0x80 | ((in[y] >> 6) & 0x3F); out[x++] = 0x80 | (in[y] & 0x3F); break;
-#endif
        }
    }
 
@@ -99,6 +100,6 @@ int der_encode_utf8_string(const wchar_t *in,  unsigned long inlen,
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/asn1/der/utf8/der_encode_utf8_string.c,v $ */
+/* $Revision: 1.7 $ */
+/* $Date: 2006/12/16 17:41:21 $ */

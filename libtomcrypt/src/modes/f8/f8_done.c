@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -31,10 +33,10 @@ int f8_done(symmetric_F8 *f8)
    return CRYPT_OK;
 }
 
-
+   
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/f8/f8_done.c,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2006/06/16 22:49:25 $ */

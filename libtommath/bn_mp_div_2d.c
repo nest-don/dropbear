@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_DIV_2D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* shift right by a certain bit count (store quotient in c, optional remainder in d) */
@@ -20,6 +20,8 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
 {
   mp_digit D, r, rr;
   int     x, res;
+  mp_int  t;
+
 
   /* if the shift count is <= 0 then we do no work */
   if (b <= 0) {
@@ -30,17 +32,22 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
     return res;
   }
 
-  /* copy */
-  if ((res = mp_copy (a, c)) != MP_OKAY) {
+  if ((res = mp_init (&t)) != MP_OKAY) {
     return res;
   }
-  /* 'a' should not be used after here - it might be the same as d */
 
   /* get the remainder */
   if (d != NULL) {
-    if ((res = mp_mod_2d (a, b, d)) != MP_OKAY) {
+    if ((res = mp_mod_2d (a, b, &t)) != MP_OKAY) {
+      mp_clear (&t);
       return res;
     }
+  }
+
+  /* copy */
+  if ((res = mp_copy (a, c)) != MP_OKAY) {
+    mp_clear (&t);
+    return res;
   }
 
   /* shift by as many digits in the bit count */
@@ -51,7 +58,7 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
   /* shift any bit count < DIGIT_BIT */
   D = (mp_digit) (b % DIGIT_BIT);
   if (D != 0) {
-    mp_digit *tmpc, mask, shift;
+    register mp_digit *tmpc, mask, shift;
 
     /* mask */
     mask = (((mp_digit)1) << D) - 1;
@@ -77,10 +84,14 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
     }
   }
   mp_clamp (c);
+  if (d != NULL) {
+    mp_exch (&t, d);
+  }
+  mp_clear (&t);
   return MP_OKAY;
 }
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_div_2d.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

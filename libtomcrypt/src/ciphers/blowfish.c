@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 /**
   @file blowfish.c
@@ -12,7 +14,7 @@
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_BLOWFISH
+#ifdef BLOWFISH
 
 const struct ltc_cipher_descriptor blowfish_desc =
 {
@@ -25,7 +27,7 @@ const struct ltc_cipher_descriptor blowfish_desc =
     &blowfish_test,
     &blowfish_done,
     &blowfish_keysize,
-    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 static const ulong32 ORIG_P[16 + 2] = {
@@ -320,15 +322,15 @@ int blowfish_setup(const unsigned char *key, int keylen, int num_rounds,
    /* check rounds */
    if (num_rounds != 0 && num_rounds != 16) {
       return CRYPT_INVALID_ROUNDS;
-   }
+   }   
 
    /* load in key bytes (Supplied by David Hopwood) */
    for (x = y = 0; x < 18; x++) {
        A = 0;
        for (z = 0; z < 4; z++) {
            A = (A << 8) | ((ulong32)key[y++] & 255);
-           if (y == (ulong32)keylen) {
-              y = 0;
+           if (y == (ulong32)keylen) { 
+              y = 0; 
            }
        }
        skey->blowfish.K[x] = ORIG_P[x] ^ A;
@@ -345,7 +347,7 @@ int blowfish_setup(const unsigned char *key, int keylen, int num_rounds,
    for (x = 0; x < 8; x++) {
        B[x] = 0;
    }
-
+   
    for (x = 0; x < 18; x += 2) {
        /* encrypt it */
        blowfish_ecb_encrypt(B, B, skey);
@@ -444,7 +446,7 @@ int blowfish_ecb_encrypt(const unsigned char *pt, unsigned char *ct, symmetric_k
   Decrypts a block of text with Blowfish
   @param ct The input ciphertext (8 bytes)
   @param pt The output plaintext (8 bytes)
-  @param skey The key as scheduled
+  @param skey The key as scheduled 
   @return CRYPT_OK if successful
 */
 #ifdef LTC_CLEAN_STACK
@@ -462,7 +464,7 @@ int blowfish_ecb_decrypt(const unsigned char *ct, unsigned char *pt, symmetric_k
     LTC_ARGCHK(pt   != NULL);
     LTC_ARGCHK(ct   != NULL);
     LTC_ARGCHK(skey != NULL);
-
+    
 #ifndef __GNUC__
     S1 = skey->blowfish.S[0];
     S2 = skey->blowfish.S[1];
@@ -510,7 +512,7 @@ int blowfish_test(void)
 {
  #ifndef LTC_TEST
     return CRYPT_NOP;
- #else
+ #else    
    int err;
    symmetric_key key;
    static const struct {
@@ -546,8 +548,7 @@ int blowfish_test(void)
       blowfish_ecb_decrypt(tmp[0], tmp[1], &key);
 
       /* compare */
-      if ((compare_testvector(tmp[0], 8, tests[x].ct, 8, "Blowfish Encrypt", x) != 0) ||
-            (compare_testvector(tmp[1], 8, tests[x].pt, 8, "Blowfish Decrypt", x) != 0)) {
+      if ((XMEMCMP(tmp[0], tests[x].ct, 8) != 0) || (XMEMCMP(tmp[1], tests[x].pt, 8) != 0)) {
          return CRYPT_FAIL_TESTVECTOR;
       }
 
@@ -561,12 +562,11 @@ int blowfish_test(void)
  #endif
 }
 
-/** Terminate the context
+/** Terminate the context 
    @param skey    The scheduled key
 */
 void blowfish_done(symmetric_key *skey)
 {
-  LTC_UNUSED_PARAM(skey);
 }
 
 /**
@@ -589,6 +589,6 @@ int blowfish_keysize(int *keysize)
 #endif
 
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/ciphers/blowfish.c,v $ */
+/* $Revision: 1.12 $ */
+/* $Date: 2006/11/08 23:01:06 $ */

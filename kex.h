@@ -29,41 +29,40 @@
 #include "algo.h"
 #include "signkey.h"
 
-void send_msg_kexinit(void);
-void recv_msg_kexinit(void);
-void send_msg_newkeys(void);
-void recv_msg_newkeys(void);
-void kexfirstinitialise(void);
-void finish_kexhashbuf(void);
+void send_msg_kexinit();
+void recv_msg_kexinit();
+void send_msg_newkeys();
+void recv_msg_newkeys();
+void kexfirstinitialise();
 
-struct kex_dh_param *gen_kexdh_param(void);
+struct kex_dh_param *gen_kexdh_param();
 void free_kexdh_param(struct kex_dh_param *param);
 void kexdh_comb_key(struct kex_dh_param *param, mp_int *dh_pub_them,
 		sign_key *hostkey);
 
-#if DROPBEAR_ECDH
-struct kex_ecdh_param *gen_kexecdh_param(void);
+#ifdef DROPBEAR_ECDH
+struct kex_ecdh_param *gen_kexecdh_param();
 void free_kexecdh_param(struct kex_ecdh_param *param);
 void kexecdh_comb_key(struct kex_ecdh_param *param, buffer *pub_them,
 		sign_key *hostkey);
 #endif
 
-#if DROPBEAR_CURVE25519
-struct kex_curve25519_param *gen_kexcurve25519_param(void);
+#ifdef DROPBEAR_CURVE25519
+struct kex_curve25519_param *gen_kexcurve25519_param();
 void free_kexcurve25519_param(struct kex_curve25519_param *param);
-void kexcurve25519_comb_key(const struct kex_curve25519_param *param, const buffer *pub_them,
+void kexcurve25519_comb_key(struct kex_curve25519_param *param, buffer *pub_them,
 		sign_key *hostkey);
 #endif
 
 #ifndef DISABLE_ZLIB
-int is_compress_trans(void);
-int is_compress_recv(void);
+int is_compress_trans();
+int is_compress_recv();
 #endif
 
-void recv_msg_kexdh_init(void); /* server */
+void recv_msg_kexdh_init(); /* server */
 
-void send_msg_kexdh_init(void); /* client */
-void recv_msg_kexdh_reply(void); /* client */
+void send_msg_kexdh_init(); /* client */
+void recv_msg_kexdh_reply(); /* client */
 
 struct KEXState {
 
@@ -84,18 +83,23 @@ struct KEXState {
 
 };
 
+#define DH_P_1_LEN 128
+extern const unsigned char dh_p_1[DH_P_1_LEN];
+#define DH_P_14_LEN 256
+extern const unsigned char dh_p_14[DH_P_14_LEN];
+
 struct kex_dh_param {
 	mp_int pub; /* e */
 	mp_int priv; /* x */
 };
 
-#if DROPBEAR_ECDH
+#ifdef DROPBEAR_ECDH
 struct kex_ecdh_param {
 	ecc_key key;
 };
 #endif
 
-#if DROPBEAR_CURVE25519
+#ifdef DROPBEAR_CURVE25519
 #define CURVE25519_LEN 32
 struct kex_curve25519_param {
 	unsigned char priv[CURVE25519_LEN];

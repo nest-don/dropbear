@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -20,12 +22,12 @@
   @param lrw   The state to terminate
   @return CRYPT_OK if successful
 */
-int lrw_done(symmetric_LRW *lrw)
+int lrw_done(symmetric_LRW *lrw) 
 {
    int err;
 
    LTC_ARGCHK(lrw != NULL);
-
+ 
    if ((err = cipher_is_valid(lrw->cipher)) != CRYPT_OK) {
       return err;
    }
@@ -35,6 +37,6 @@ int lrw_done(symmetric_LRW *lrw)
 }
 
 #endif
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/lrw/lrw_done.c,v $ */
+/* $Revision: 1.6 $ */
+/* $Date: 2006/06/29 01:53:13 $ */

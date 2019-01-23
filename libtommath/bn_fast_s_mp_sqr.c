@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_FAST_S_MP_SQR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* the jist of squaring...
@@ -66,7 +66,7 @@ int fast_s_mp_sqr (mp_int * a, mp_int * b)
        * we halve the distance since they approach at a rate of 2x
        * and we have to round because odd cases need to be executed
        */
-      iy = MIN(iy, ((ty-tx)+1)>>1);
+      iy = MIN(iy, (ty-tx+1)>>1);
 
       /* execute loop */
       for (iz = 0; iz < iy; iz++) {
@@ -109,6 +109,6 @@ int fast_s_mp_sqr (mp_int * a, mp_int * b)
 }
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_fast_s_mp_sqr.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

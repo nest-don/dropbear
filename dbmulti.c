@@ -26,13 +26,17 @@
 
 /* definitions are cleanest if we just put them here */
 int dropbear_main(int argc, char ** argv);
-int cli_main(int argc, char ** argv);
 int dropbearkey_main(int argc, char ** argv);
 int dropbearconvert_main(int argc, char ** argv);
 int scp_main(int argc, char ** argv);
 
-static int runprog(const char *progname, int argc, char ** argv, int *match) {
-	*match = DROPBEAR_SUCCESS;
+int main(int argc, char ** argv) {
+
+	char * progname;
+
+	if (argc > 0) {
+		/* figure which form we're being called as */
+		progname = basename(argv[0]);
 
 #ifdef DBMULTI_dropbear
 		if (strcmp(progname, "dropbear") == 0) {
@@ -60,28 +64,10 @@ static int runprog(const char *progname, int argc, char ** argv, int *match) {
 			return scp_main(argc, argv);
 		}
 #endif
-	*match = DROPBEAR_FAILURE;
-	return 1;
-}
-
-int main(int argc, char ** argv) {
-	int i;
-	for (i = 0; i < 2; i++) {
-		/* Try symlink first, then try as an argument eg "dropbearmulti dbclient host ..." */
-		if (argc > i) {
-			int match, res;
-			/* figure which form we're being called as */
-			const char* progname = basename(argv[i]);
-			res = runprog(progname, argc-i, &argv[i], &match);
-			if (match == DROPBEAR_SUCCESS) {
-				return res;
-			}
-		}
 	}
 
 	fprintf(stderr, "Dropbear SSH multi-purpose v%s\n"
-			"Make a symlink pointing at this binary with one of the\n"
-			"following names or run 'dropbearmulti <command>'.\n"
+			"Make a symlink pointing at this binary with one of the following names:\n"
 #ifdef DBMULTI_dropbear
 			"'dropbear' - the Dropbear server\n"
 #endif

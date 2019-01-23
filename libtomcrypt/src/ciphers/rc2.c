@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 /**********************************************************************\
 * To commemorate the 1996 RSA Data Security Conference, the following  *
@@ -16,14 +18,14 @@
 * Thanks to CodeView, SoftIce, and D86 for helping bring this code to  *
 * the public.                                                          *
 \**********************************************************************/
-#include "tomcrypt.h"
+#include <tomcrypt.h>
 
 /**
   @file rc2.c
-  Implementation of RC2 with fixed effective key length of 64bits
-*/
+  Implementation of RC2
+*/  
 
-#ifdef LTC_RC2
+#ifdef RC2
 
 const struct ltc_cipher_descriptor rc2_desc = {
    "rc2",
@@ -34,7 +36,7 @@ const struct ltc_cipher_descriptor rc2_desc = {
    &rc2_test,
    &rc2_done,
    &rc2_keysize,
-   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+   NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
 /* 256-entry permutation table, probably derived somehow from pi */
@@ -61,26 +63,22 @@ static const unsigned char permute[256] = {
     Initialize the RC2 block cipher
     @param key The symmetric key you wish to pass
     @param keylen The key length in bytes
-    @param bits The effective key length in bits
     @param num_rounds The number of rounds desired (0 for default)
     @param skey The key in as scheduled by this function.
     @return CRYPT_OK if successful
  */
-int rc2_setup_ex(const unsigned char *key, int keylen, int bits, int num_rounds, symmetric_key *skey)
+int rc2_setup(const unsigned char *key, int keylen, int num_rounds, symmetric_key *skey)
 {
    unsigned *xkey = skey->rc2.xkey;
    unsigned char tmp[128];
    unsigned T8, TM;
-   int i;
+   int i, bits;
 
    LTC_ARGCHK(key  != NULL);
    LTC_ARGCHK(skey != NULL);
 
-   if (keylen == 0 || keylen > 128 || bits > 1024) {
+   if (keylen < 8 || keylen > 128) {
       return CRYPT_INVALID_KEYSIZE;
-   }
-   if (bits == 0) {
-      bits = 1024;
    }
 
    if (num_rounds != 0 && num_rounds != 16) {
@@ -88,50 +86,35 @@ int rc2_setup_ex(const unsigned char *key, int keylen, int bits, int num_rounds,
    }
 
    for (i = 0; i < keylen; i++) {
-      tmp[i] = key[i] & 255;
+       tmp[i] = key[i] & 255;
    }
 
-   /* Phase 1: Expand input key to 128 bytes */
-   if (keylen < 128) {
-      for (i = keylen; i < 128; i++) {
-         tmp[i] = permute[(tmp[i - 1] + tmp[i - keylen]) & 255];
-      }
-   }
+    /* Phase 1: Expand input key to 128 bytes */
+    if (keylen < 128) {
+        for (i = keylen; i < 128; i++) {
+            tmp[i] = permute[(tmp[i - 1] + tmp[i - keylen]) & 255];
+        }
+    }
+    
+    /* Phase 2 - reduce effective key size to "bits" */
+    bits = keylen<<3;
+    T8   = (unsigned)(bits+7)>>3;
+    TM   = (255 >> (unsigned)(7 & -bits));
+    tmp[128 - T8] = permute[tmp[128 - T8] & TM];
+    for (i = 127 - T8; i >= 0; i--) {
+        tmp[i] = permute[tmp[i + 1] ^ tmp[i + T8]];
+    }
 
-   /* Phase 2 - reduce effective key size to "bits" */
-   T8   = (unsigned)(bits+7)>>3;
-   TM   = (255 >> (unsigned)(7 & -bits));
-   tmp[128 - T8] = permute[tmp[128 - T8] & TM];
-   for (i = 127 - T8; i >= 0; i--) {
-      tmp[i] = permute[tmp[i + 1] ^ tmp[i + T8]];
-   }
-
-   /* Phase 3 - copy to xkey in little-endian order */
-   for (i = 0; i < 64; i++) {
-      xkey[i] =  (unsigned)tmp[2*i] + ((unsigned)tmp[2*i+1] << 8);
-   }
+    /* Phase 3 - copy to xkey in little-endian order */
+    for (i = 0; i < 64; i++) {
+        xkey[i] =  (unsigned)tmp[2*i] + ((unsigned)tmp[2*i+1] << 8);
+    }        
 
 #ifdef LTC_CLEAN_STACK
-   zeromem(tmp, sizeof(tmp));
+    zeromem(tmp, sizeof(tmp));
 #endif
-
-   return CRYPT_OK;
-}
-
-/**
-   Initialize the RC2 block cipher
-
-     The effective key length is here always keylen * 8
-
-   @param key The symmetric key you wish to pass
-   @param keylen The key length in bytes
-   @param num_rounds The number of rounds desired (0 for default)
-   @param skey The key in as scheduled by this function.
-   @return CRYPT_OK if successful
-*/
-int rc2_setup(const unsigned char *key, int keylen, int num_rounds, symmetric_key *skey)
-{
-   return rc2_setup_ex(key, keylen, keylen * 8, num_rounds, skey);
+    
+    return CRYPT_OK;
 }
 
 /**********************************************************************\
@@ -197,7 +180,7 @@ int rc2_ecb_encrypt( const unsigned char *pt,
     ct[5] = (unsigned char)(x54 >> 8);
     ct[6] = (unsigned char)x76;
     ct[7] = (unsigned char)(x76 >> 8);
-
+ 
     return CRYPT_OK;
 }
 
@@ -219,7 +202,7 @@ int rc2_ecb_encrypt( const unsigned char *pt,
   Decrypts a block of text with RC2
   @param ct The input ciphertext (8 bytes)
   @param pt The output plaintext (8 bytes)
-  @param skey The key as scheduled
+  @param skey The key as scheduled 
   @return CRYPT_OK if successful
 */
 #ifdef LTC_CLEAN_STACK
@@ -299,49 +282,20 @@ int rc2_test(void)
 {
  #ifndef LTC_TEST
     return CRYPT_NOP;
- #else
+ #else    
    static const struct {
-        int keylen, bits;
+        int keylen;
         unsigned char key[16], pt[8], ct[8];
    } tests[] = {
 
-   { 8, 63,
-     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0xeb, 0xb7, 0x73, 0xf9, 0x93, 0x27, 0x8e, 0xff }
-   },
-   { 8, 64,
-     { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },
-     { 0x27, 0x8b, 0x27, 0xe4, 0x2e, 0x2f, 0x0d, 0x49 }
-   },
-   { 8, 64,
+   { 8,
      { 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
      { 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 },
      { 0x30, 0x64, 0x9e, 0xdf, 0x9b, 0xe7, 0xd2, 0xc2 }
+
    },
-   { 1, 64,
-     { 0x88, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0x61, 0xa8, 0xa2, 0x44, 0xad, 0xac, 0xcc, 0xf0 }
-   },
-   { 7, 64,
-     { 0x88, 0xbc, 0xa9, 0x0e, 0x90, 0x87, 0x5a, 0x00,
-       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0x6c, 0xcf, 0x43, 0x08, 0x97, 0x4c, 0x26, 0x7f }
-   },
-   { 16, 64,
-     { 0x88, 0xbc, 0xa9, 0x0e, 0x90, 0x87, 0x5a, 0x7f,
-       0x0f, 0x79, 0xc3, 0x84, 0x62, 0x7b, 0xaf, 0xb2 },
-     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
-     { 0x1a, 0x80, 0x7d, 0x27, 0x2b, 0xbe, 0x5d, 0xb1 }
-   },
-   { 16, 128,
+   { 16,
      { 0x88, 0xbc, 0xa9, 0x0e, 0x90, 0x87, 0x5a, 0x7f,
        0x0f, 0x79, 0xc3, 0x84, 0x62, 0x7b, 0xaf, 0xb2 },
      { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
@@ -354,22 +308,14 @@ int rc2_test(void)
 
     for (x = 0; x < (int)(sizeof(tests) / sizeof(tests[0])); x++) {
         zeromem(tmp, sizeof(tmp));
-        if (tests[x].bits == (tests[x].keylen * 8)) {
-           if ((err = rc2_setup(tests[x].key, tests[x].keylen, 0, &skey)) != CRYPT_OK) {
-              return err;
-           }
+        if ((err = rc2_setup(tests[x].key, tests[x].keylen, 0, &skey)) != CRYPT_OK) {
+           return err;
         }
-        else {
-           if ((err = rc2_setup_ex(tests[x].key, tests[x].keylen, tests[x].bits, 0, &skey)) != CRYPT_OK) {
-              return err;
-           }
-        }
-
+        
         rc2_ecb_encrypt(tests[x].pt, tmp[0], &skey);
         rc2_ecb_decrypt(tmp[0], tmp[1], &skey);
-
-        if (compare_testvector(tmp[0], 8, tests[x].ct, 8, "RC2 CT", x) ||
-              compare_testvector(tmp[1], 8, tests[x].pt, 8, "RC2 PT", x)) {
+        
+        if (XMEMCMP(tmp[0], tests[x].ct, 8) != 0 || XMEMCMP(tmp[1], tests[x].pt, 8) != 0) {
            return CRYPT_FAIL_TESTVECTOR;
         }
 
@@ -383,12 +329,11 @@ int rc2_test(void)
    #endif
 }
 
-/** Terminate the context
+/** Terminate the context 
    @param skey    The scheduled key
 */
 void rc2_done(symmetric_key *skey)
 {
-  LTC_UNUSED_PARAM(skey);
 }
 
 /**
@@ -399,7 +344,7 @@ void rc2_done(symmetric_key *skey)
 int rc2_keysize(int *keysize)
 {
    LTC_ARGCHK(keysize != NULL);
-   if (*keysize < 1) {
+   if (*keysize < 8) {
        return CRYPT_INVALID_KEYSIZE;
    } else if (*keysize > 128) {
        *keysize = 128;
@@ -412,6 +357,6 @@ int rc2_keysize(int *keysize)
 
 
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/ciphers/rc2.c,v $ */
+/* $Revision: 1.12 $ */
+/* $Date: 2006/11/08 23:01:06 $ */

@@ -5,15 +5,17 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
-/**
+/** 
   @file ocb_encrypt_authenticate_memory.c
   OCB implementation, encrypt block of memory, by Tom St Denis
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_OCB_MODE
+#ifdef OCB_MODE
 
 /**
    Encrypt and generate an authentication code for a buffer of memory
@@ -30,7 +32,7 @@
 */
 int ocb_encrypt_authenticate_memory(int cipher,
     const unsigned char *key,    unsigned long keylen,
-    const unsigned char *nonce,
+    const unsigned char *nonce,  
     const unsigned char *pt,     unsigned long ptlen,
           unsigned char *ct,
           unsigned char *tag,    unsigned long *taglen)
@@ -77,6 +79,6 @@ LBL_ERR:
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/encauth/ocb/ocb_encrypt_authenticate_memory.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/03/31 14:15:35 $ */

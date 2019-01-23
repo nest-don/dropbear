@@ -111,22 +111,10 @@ if 0 disables keepalives. If no response is received for 3 consecutive keepalive
 .B \-I \fIidle_timeout
 Disconnect the session if no traffic is transmitted or received for \fIidle_timeout\fR seconds.
 .TP
-
-.\" TODO: how to avoid a line break between these two -J arguments?
 .B \-J \fIproxy_command
-.TP
-.B \-J \fI&fd
-.br
 Use the standard input/output of the program \fIproxy_command\fR rather than using
 a normal TCP connection. A hostname should be still be provided, as this is used for
-comparing saved hostkeys. This command will be executed as "exec proxy_command ..." with the
-default shell.
-
-The second form &fd will make dbclient use the numeric file descriptor as a socket. This
-can be used for more complex tunnelling scenarios. Example usage with socat is
-
-socat EXEC:'dbclient -J &38 ev',fdin=38,fdout=38 TCP4:host.example.com:22
-
+comparing saved hostkeys.
 .TP
 .B \-B \fIendhost:endport
 "Netcat-alike" mode, where Dropbear will connect to the given host, then create a
@@ -139,28 +127,8 @@ Specify a comma separated list of ciphers to enable. Use \fI-c help\fR to list p
 .B \-m \fIMAClist
 Specify a comma separated list of authentication MACs to enable. Use \fI-m help\fR to list possibilities.
 .TP
-.B \-o \fIoption
-Can be used to give options in the format used by OpenSSH config file. This is
-useful for specifying options for which there is no separate command-line flag.
-For full details of the options listed below, and their possible values, see
-ssh_config(5).
-The following options have currently been implemented:
-
-.RS
-.TP
-.B ExitOnForwardFailure
-Specifies whether dbclient should terminate the connection if it cannot set up all requested local and remote port forwardings. The argument must be “yes” or “no”.  The default is “no”.
-.TP
-.B UseSyslog
-Send dbclient log messages to syslog in addition to stderr.
-.RE
-.TP
 .B \-s 
 The specified command will be requested as a subsystem, used for sftp. Dropbear doesn't implement sftp itself but the OpenSSH sftp client can be used eg \fIsftp -S dbclient user@host\fR
-.TP
-.B \-b \fI[address][:port]
-Bind to a specific local address when connecting to the remote host. This can be used to choose from
-multiple outgoing interfaces. Either address or port (or both) can be given.
 .TP
 .B \-V
 Print the version

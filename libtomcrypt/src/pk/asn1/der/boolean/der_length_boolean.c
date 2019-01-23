@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -15,7 +17,7 @@
 
 #ifdef LTC_DER
 /**
-  Gets length of DER encoding of a BOOLEAN
+  Gets length of DER encoding of a BOOLEAN 
   @param outlen [out] The length of the DER encoding
   @return CRYPT_OK if successful
 */
@@ -28,6 +30,6 @@ int der_length_boolean(unsigned long *outlen)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/asn1/der/boolean/der_length_boolean.c,v $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2006/04/22 17:28:38 $ */

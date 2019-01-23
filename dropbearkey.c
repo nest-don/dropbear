@@ -67,36 +67,36 @@ static void printhelp(char * progname) {
 
 	fprintf(stderr, "Usage: %s -t <type> -f <filename> [-s bits]\n"
 					"-t type	Type of key to generate. One of:\n"
-#if DROPBEAR_RSA
+#ifdef DROPBEAR_RSA
 					"		rsa\n"
 #endif
-#if DROPBEAR_DSS
+#ifdef DROPBEAR_DSS
 					"		dss\n"
 #endif
-#if DROPBEAR_ECDSA
+#ifdef DROPBEAR_ECDSA
 					"		ecdsa\n"
 #endif
 					"-f filename    Use filename for the secret key.\n"
 					"               ~/.ssh/id_dropbear is recommended for client keys.\n"
 					"-s bits	Key size in bits, should be a multiple of 8 (optional)\n"
-#if DROPBEAR_DSS
+#ifdef DROPBEAR_DSS
 					"           DSS has a fixed size of 1024 bits\n"
 #endif
-#if DROPBEAR_ECDSA
+#ifdef DROPBEAR_ECDSA
 					"           ECDSA has sizes "
-#if DROPBEAR_ECC_256
+#ifdef DROPBEAR_ECC_256
 					"256 "
 #endif
-#if DROPBEAR_ECC_384
+#ifdef DROPBEAR_ECC_384
 					"384 "
 #endif
-#if DROPBEAR_ECC_521
+#ifdef DROPBEAR_ECC_521
 					"521 "
 #endif
 					"\n"
 #endif
 					"-y		Just print the publickey and fingerprint for the\n		private key in <filename>.\n"
-#if DEBUG_TRACE
+#ifdef DEBUG_TRACE
 					"-v		verbose\n"
 #endif
 					,progname);
@@ -105,41 +105,41 @@ static void printhelp(char * progname) {
 /* fails fatally */
 static void check_signkey_bits(enum signkey_type type, int bits)
 {
-	switch (type) {
-#if DROPBEAR_RSA
-		case DROPBEAR_SIGNKEY_RSA:
-			if (bits < 512 || bits > 4096 || (bits % 8 != 0)) {
-				dropbear_exit("Bits must satisfy 512 <= bits <= 4096, and be a"
-				              " multiple of 8\n");
-			}
-			break;
+        switch (type) {
+#ifdef DROPBEAR_RSA
+            case DROPBEAR_SIGNKEY_RSA:
+                if (bits < 512 || bits > 4096 || (bits % 8 != 0)) {
+                	dropbear_exit("Bits must satisfy 512 <= bits <= 4096, and be a"
+                            " multiple of 8\n");
+                }
+                break;
 #endif
 #ifdef DROPEAR_DSS
-		case DROPBEAR_SIGNKEY_DSS:
-			if (bits != 1024) {
-				dropbear_exit("DSS keys have a fixed size of 1024 bits\n");
-				exit(EXIT_FAILURE);
-			}
+            case DROPBEAR_SIGNKEY_DSS:
+                if (bits != 1024) {
+                    dropbear_exit("DSS keys have a fixed size of 1024 bits\n");
+                    exit(EXIT_FAILURE);
+                }
 #endif
-		default:
-			(void)0; /* quiet, compiler. ecdsa handles checks itself */
-	}
+			default:
+				(void)0; /* quiet, compiler. ecdsa handles checks itself */
+        }
 }
 
-#if defined(DBMULTI_dropbearkey) || !DROPBEAR_MULTI
-#if defined(DBMULTI_dropbearkey) && DROPBEAR_MULTI
+#if defined(DBMULTI_dropbearkey) || !defined(DROPBEAR_MULTI)
+#if defined(DBMULTI_dropbearkey) && defined(DROPBEAR_MULTI)
 int dropbearkey_main(int argc, char ** argv) {
 #else
 int main(int argc, char ** argv) {
 #endif
 
 	int i;
-	char ** next = NULL;
+	char ** next = 0;
 	char * filename = NULL;
 	enum signkey_type keytype = DROPBEAR_SIGNKEY_NONE;
 	char * typetext = NULL;
 	char * sizetext = NULL;
-	unsigned int bits = 0, genbits;
+	unsigned int bits = 0;
 	int printpub = 0;
 
 	crypto_init();
@@ -174,7 +174,7 @@ int main(int argc, char ** argv) {
 					printhelp(argv[0]);
 					exit(EXIT_SUCCESS);
 					break;
-#if DEBUG_TRACE
+#ifdef DEBUG_TRACE
 				case 'v':
 					debug_trace = 1;
 					break;
@@ -206,19 +206,19 @@ int main(int argc, char ** argv) {
 		exit(EXIT_FAILURE);
 	}
 
-#if DROPBEAR_RSA
+#ifdef DROPBEAR_RSA
 	if (strcmp(typetext, "rsa") == 0)
 	{
 		keytype = DROPBEAR_SIGNKEY_RSA;
 	}
 #endif
-#if DROPBEAR_DSS
+#ifdef DROPBEAR_DSS
 	if (strcmp(typetext, "dss") == 0)
 	{
 		keytype = DROPBEAR_SIGNKEY_DSS;
 	}
 #endif
-#if DROPBEAR_ECDSA
+#ifdef DROPBEAR_ECDSA
 	if (strcmp(typetext, "ecdsa") == 0)
 	{
 		keytype = DROPBEAR_SIGNKEY_ECDSA_KEYGEN;
@@ -238,14 +238,13 @@ int main(int argc, char ** argv) {
 		}
 		
 		check_signkey_bits(keytype, bits);;
-	}
+    }
 
-	genbits = signkey_generate_get_bits(keytype, bits);
-	fprintf(stderr, "Generating %u bit %s key, this may take a while...\n", genbits, typetext);
-	if (signkey_generate(keytype, bits, filename, 0) == DROPBEAR_FAILURE)
-	{
-		dropbear_exit("Failed to generate key.\n");
-	}
+	fprintf(stderr, "Generating key, this may take a while...\n");
+    if (signkey_generate(keytype, bits, filename) == DROPBEAR_FAILURE)
+    {
+    	dropbear_exit("Failed to generate key.\n");
+    }
 
 	printpubfile(filename);
 

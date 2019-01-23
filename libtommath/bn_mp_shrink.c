@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_SHRINK_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,30 +12,24 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* shrink a bignum */
 int mp_shrink (mp_int * a)
 {
   mp_digit *tmp;
-  int used = 1;
-  
-  if(a->used > 0) {
-    used = a->used;
-  }
-  
-  if (a->alloc != used) {
-    if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * used)) == NULL) {
+  if (a->alloc != a->used && a->used > 0) {
+    if ((tmp = OPT_CAST(mp_digit) XREALLOC (a->dp, sizeof (mp_digit) * a->used)) == NULL) {
       return MP_MEM;
     }
     a->dp    = tmp;
-    a->alloc = used;
+    a->alloc = a->used;
   }
   return MP_OKAY;
 }
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_shrink.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

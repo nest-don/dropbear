@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_FAST_S_MP_MUL_HIGH_DIGS_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* this is a modified version of fast_s_mul_digs that only produces
@@ -75,7 +75,7 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   c->used = pa;
 
   {
-    mp_digit *tmpc;
+    register mp_digit *tmpc;
 
     tmpc = c->dp + digs;
     for (ix = digs; ix < pa; ix++) {
@@ -93,6 +93,6 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
 }
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_fast_s_mp_mul_high_digs.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/11/14 03:46:25 $ */

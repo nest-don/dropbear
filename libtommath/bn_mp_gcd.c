@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_GCD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* Greatest Common Divisor using the binary method */
@@ -70,7 +70,7 @@ int mp_gcd (mp_int * a, mp_int * b, mp_int * c)
      }
   }
 
-  while (mp_iszero(&v) == MP_NO) {
+  while (mp_iszero(&v) == 0) {
      /* make sure v is the largest */
      if (mp_cmp_mag(&u, &v) == MP_GT) {
         /* swap u and v to make sure v is >= u */
@@ -100,6 +100,6 @@ LBL_U:mp_clear (&v);
 }
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_gcd.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

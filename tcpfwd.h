@@ -26,7 +26,6 @@
 
 #include "channel.h"
 #include "list.h"
-#include "listener.h"
 
 struct TCPListener {
 
@@ -58,19 +57,19 @@ struct TCPFwdEntry {
 };
 
 /* Server */
-void recv_msg_global_request_remotetcp(void);
+void recv_msg_global_request_remotetcp();
 
 extern const struct ChanType svr_chan_tcpdirect;
 
 /* Client */
-void setup_localtcp(void);
-void setup_remotetcp(void);
+void setup_localtcp();
+void setup_remotetcp();
 extern const struct ChanType cli_chan_tcpremote;
-void cli_recv_msg_request_success(void);
-void cli_recv_msg_request_failure(void);
+void cli_recv_msg_request_success();
+void cli_recv_msg_request_failure();
 
 /* Common */
-int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener);
+int listen_tcpfwd(struct TCPListener* tcpinfo);
 int tcp_prio_inithandler(struct Channel* chan);
 
 /* A random identifier */

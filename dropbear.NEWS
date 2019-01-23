@@ -1,0 +1,30 @@
+dropbear (2015.68-1) unstable; urgency=low
+
+    dropbear < 2015.68-1 has been split into dropbear-bin (binaries),
+    dropbear-run (init scripts) and dropbear-initramfs (initramfs
+    integration).  'dropbear' is now a transitional dummy package
+    depending on dropbear-run and dropbear-initramfs.
+
+    /usr/share/initramfs-tools/conf-hooks.d/dropbear is no longer marked
+    as a configuration file, since doing so violates the Debian Policy
+    Manual section 10.7.2.  (Regression from 2014.64-1.)  Instead, move
+    the file to /etc/initramfs-tools/conf-hooks.d/dropbear and add a
+    symlink in /usr/share/initramfs-tools/conf-hooks.d.
+
+    Upstream has removed the '-d' option from the manpage.  '-r' is now
+    used to specify all three types of host key file: RSA, DSS, and
+    ECDSA.
+
+    Updating the initramfs no longer displays a warning about changing
+    host keys: users shouldn't be encouraged to use the same keys in the
+    encrypted partition and in the initramfs.  The proper fix is to use
+    an alternative port or UserKnownHostFile.
+
+    By default all interfaces are now brought down, and IP routes and
+    addressed are flushed before exiting the ramdisk, in order to avoid
+    dirty network configuration in the regular kernel.  The interfaces
+    considered are those matching the $DROPBEAR_IFDOWN shell pattern
+    (default: '*'); the special value 'none' keeps all interfaces up and
+    preserves routing tables and addresses.
+
+ -- Guilhem Moulin <guilhem@guilhem.org>  Sat, 03 Oct 2015 20:47:25 +0200

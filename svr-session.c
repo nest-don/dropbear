@@ -40,10 +40,8 @@
 #include "auth.h"
 #include "runopts.h"
 #include "crypto_desc.h"
-#include "fuzz.h"
 
-static void svr_remoteclosed(void);
-static void svr_algos_initialise(void);
+static void svr_remoteclosed();
 
 struct serversession svr_ses; /* GLOBAL */
 
@@ -64,16 +62,16 @@ static const packettype svr_packettypes[] = {
 	{SSH_MSG_CHANNEL_FAILURE, ignore_recv_response},
 	{SSH_MSG_REQUEST_FAILURE, ignore_recv_response}, /* for keepalive */
 	{SSH_MSG_REQUEST_SUCCESS, ignore_recv_response}, /* client */
-#if DROPBEAR_LISTENERS
+#ifdef USING_LISTENERS
 	{SSH_MSG_CHANNEL_OPEN_CONFIRMATION, recv_msg_channel_open_confirmation},
 	{SSH_MSG_CHANNEL_OPEN_FAILURE, recv_msg_channel_open_failure},
 #endif
-	{0, NULL} /* End */
+	{0, 0} /* End */
 };
 
 static const struct ChanType *svr_chantypes[] = {
 	&svrchansess,
-#if DROPBEAR_SVR_LOCALTCPFWD
+#ifdef ENABLE_SVR_LOCALTCPFWD
 	&svr_chan_tcpdirect,
 #endif
 	NULL /* Null termination is mandatory. */
@@ -98,13 +96,12 @@ void svr_session(int sock, int childpipe) {
 
 	/* Initialise server specific parts of the session */
 	svr_ses.childpipe = childpipe;
-#if DROPBEAR_VFORK
+#ifdef USE_VFORK
 	svr_ses.server_pid = getpid();
 #endif
 	svr_authinitialise();
 	chaninitialise(svr_chantypes);
 	svr_chansessinitialise();
-	svr_algos_initialise();
 
 	/* for logging the remote address */
 	get_socket_address(ses.sock_in, NULL, NULL, &host, &port, 0);
@@ -127,7 +124,7 @@ void svr_session(int sock, int childpipe) {
 	ses.isserver = 1;
 
 	/* We're ready to go now */
-	ses.init_done = 1;
+	sessinitdone = 1;
 
 	/* exchange identification, version etc */
 	send_session_identification();
@@ -139,7 +136,7 @@ void svr_session(int sock, int childpipe) {
 
 	/* Run the main for loop. NULL is for the dispatcher - only the client
 	 * code makes use of it */
-	session_loop(svr_chansess_checksignal);
+	session_loop(NULL);
 
 	/* Not reached */
 
@@ -147,35 +144,33 @@ void svr_session(int sock, int childpipe) {
 
 /* failure exit - format must be <= 100 chars */
 void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
-	char exitmsg[150];
-	char fullmsg[300];
+
+	char fmtbuf[300];
 	int i;
 
-	/* Render the formatted exit message */
-	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
-
-	/* Add the prefix depending on session/auth state */
-	if (!ses.init_done) {
+	if (!sessinitdone) {
 		/* before session init */
-		snprintf(fullmsg, sizeof(fullmsg), "Early exit: %s", exitmsg);
+		snprintf(fmtbuf, sizeof(fmtbuf), 
+				"Early exit: %s", format);
 	} else if (ses.authstate.authdone) {
 		/* user has authenticated */
-		snprintf(fullmsg, sizeof(fullmsg),
+		snprintf(fmtbuf, sizeof(fmtbuf),
 				"Exit (%s): %s", 
-				ses.authstate.pw_name, exitmsg);
+				ses.authstate.pw_name, format);
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
-		snprintf(fullmsg, sizeof(fullmsg), 
-				"Exit before auth (user '%s', %u fails): %s",
-				ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
+		snprintf(fmtbuf, sizeof(fmtbuf), 
+				"Exit before auth (user '%s', %d fails): %s",
+				ses.authstate.pw_name, ses.authstate.failcount, format);
 	} else {
 		/* before userauth */
-		snprintf(fullmsg, sizeof(fullmsg), "Exit before auth: %s", exitmsg);
+		snprintf(fmtbuf, sizeof(fmtbuf), 
+				"Exit before auth: %s", format);
 	}
 
-	dropbear_log(LOG_INFO, "%s", fullmsg);
+	_dropbear_log(LOG_INFO, fmtbuf, param);
 
-#if DROPBEAR_VFORK
+#ifdef USE_VFORK
 	/* For uclinux only the main server process should cleanup - we don't want
 	 * forked children doing that */
 	if (svr_ses.server_pid == getpid())
@@ -184,13 +179,6 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 		/* must be after we've done with username etc */
 		session_cleanup();
 	}
-
-#if DROPBEAR_FUZZ
-	/* longjmp before cleaning up svr_opts */
-    if (fuzz.do_jmp) {
-        longjmp(fuzz.jmp, 1);
-    }
-#endif
 
 	if (svr_opts.hostkey) {
 		sign_key_free(svr_opts.hostkey);
@@ -201,7 +189,6 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 		m_free(svr_opts.ports[i]);
 	}
 
-    
 	exit(exitcode);
 
 }
@@ -217,18 +204,19 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 	vsnprintf(printbuf, sizeof(printbuf), format, param);
 
 #ifndef DISABLE_SYSLOG
-	if (opts.usingsyslog) {
+	if (svr_opts.usingsyslog) {
 		syslog(priority, "%s", printbuf);
 	}
 #endif
 
 	/* if we are using DEBUG_TRACE, we want to print to stderr even if
 	 * syslog is used, so it is included in error reports */
-#if DEBUG_TRACE
+#ifdef DEBUG_TRACE
 	havetrace = debug_trace;
 #endif
 
-	if (!opts.usingsyslog || havetrace) {
+	if (!svr_opts.usingsyslog || havetrace)
+	{
 		struct tm * local_tm = NULL;
 		timesec = time(NULL);
 		local_tm = localtime(&timesec);
@@ -247,23 +235,10 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 static void svr_remoteclosed() {
 
 	m_close(ses.sock_in);
-	if (ses.sock_in != ses.sock_out) {
-		m_close(ses.sock_out);
-	}
+	m_close(ses.sock_out);
 	ses.sock_in = -1;
 	ses.sock_out = -1;
 	dropbear_close("Exited normally");
 
-}
-
-static void svr_algos_initialise(void) {
-#if DROPBEAR_DH_GROUP1 && DROPBEAR_DH_GROUP1_CLIENTONLY
-	algo_type *algo;
-	for (algo = sshkex; algo->name; algo++) {
-		if (strcmp(algo->name, "diffie-hellman-group1-sha1") == 0) {
-			algo->usable = 0;
-		}
-	}
-#endif
 }
 

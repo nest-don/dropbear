@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_DIV_D_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,19 +12,14 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 static int s_is_power_of_two(mp_digit b, int *p)
 {
    int x;
 
-   /* fast return if no power of two */
-   if ((b == 0) || ((b & (b-1)) != 0)) {
-      return 0;
-   }
-
-   for (x = 0; x < DIGIT_BIT; x++) {
+   for (x = 1; x < DIGIT_BIT; x++) {
       if (b == (((mp_digit)1)<<x)) {
          *p = x;
          return 1;
@@ -47,7 +42,7 @@ int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
   }
 
   /* quick outs */
-  if ((b == 1) || (mp_iszero(a) == MP_YES)) {
+  if (b == 1 || mp_iszero(a) == 1) {
      if (d != NULL) {
         *d = 0;
      }
@@ -110,6 +105,6 @@ int mp_div_d (mp_int * a, mp_digit b, mp_int * c, mp_digit * d)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_div_d.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

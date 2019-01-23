@@ -35,13 +35,12 @@
 #include "auth.h"
 #include "channel.h"
 #include "netio.h"
-#include "runopts.h"
 
-static int read_packet_init(void);
+static int read_packet_init();
 static void make_mac(unsigned int seqno, const struct key_context_directional * key_state,
 		buffer * clear_buf, unsigned int clear_len, 
 		unsigned char *output_mac);
-static int checkmac(void);
+static int checkmac();
 
 /* For exact details see http://www.zlib.net/zlib_tech.html
  * 5 bytes per 16kB block, plus 6 bytes for the stream.
@@ -50,7 +49,7 @@ static int checkmac(void);
 #define ZLIB_COMPRESS_EXPANSION (((RECV_MAX_PAYLOAD_LEN/16384)+1)*5 + 6)
 #define ZLIB_DECOMPRESS_INCR 1024
 #ifndef DISABLE_ZLIB
-static buffer* buf_decompress(const buffer* buf, unsigned int len);
+static buffer* buf_decompress(buffer* buf, unsigned int len);
 static void buf_compress(buffer * dest, buffer * src, unsigned int len);
 #endif
 
@@ -58,13 +57,14 @@ static void buf_compress(buffer * dest, buffer * src, unsigned int len);
 void write_packet() {
 
 	ssize_t written;
-#if defined(HAVE_WRITEV) && (defined(IOV_MAX) || defined(UIO_MAXIOV))
+#ifdef HAVE_WRITEV
 	/* 50 is somewhat arbitrary */
 	unsigned int iov_count = 50;
 	struct iovec iov[50];
 #else
 	int len;
 	buffer* writebuf;
+	int packet_type;
 #endif
 	
 	TRACE2(("enter write_packet"))
@@ -76,15 +76,6 @@ void write_packet() {
 	/* This may return EAGAIN. The main loop sometimes
 	calls write_packet() without bothering to test with select() since
 	it's likely to be necessary */
-#if DROPBEAR_FUZZ
-	if (fuzz.fuzzing) {
-		/* pretend to write one packet at a time */
-		/* TODO(fuzz): randomise amount written based on the fuzz input */
-		written = iov[0].iov_len;
-	}
-	else
-#endif
-	{
 	written = writev(ses.sock_out, iov, iov_count);
 	if (written < 0) {
 		if (errno == EINTR || errno == EAGAIN) {
@@ -93,7 +84,6 @@ void write_packet() {
 		} else {
 			dropbear_exit("Error writing: %s", strerror(errno));
 		}
-	}
 	}
 
 	packet_queue_consume(&ses.writequeue, written);
@@ -104,15 +94,15 @@ void write_packet() {
 	}
 
 #else /* No writev () */
-#if DROPBEAR_FUZZ
-	_Static_assert(0, "No fuzzing code for no-writev writes");
-#endif
 	/* Get the next buffer in the queue of encrypted packets to write*/
 	writebuf = (buffer*)examine(&ses.writequeue);
 
 	/* The last byte of the buffer is not to be transmitted, but is 
 	 * a cleartext packet_type indicator */
-	len = writebuf->len - writebuf->pos;
+	packet_type = writebuf->data[writebuf->len-1];
+	len = writebuf->len - 1 - writebuf->pos;
+	TRACE2(("write_packet type %d len %d/%d", packet_type,
+			len, writebuf->len-1))
 	dropbear_assert(len > 0);
 	/* Try to write as much as possible */
 	written = write(ses.sock_out, buf_getptr(writebuf, len), len);
@@ -341,6 +331,10 @@ void decrypt_packet() {
 		ses.payload = ses.readbuf;
 		ses.payload_beginning = ses.payload->pos;
 		buf_setlen(ses.payload, ses.payload->pos + len);
+		/* copy payload */
+		//ses.payload = buf_new(len);
+		//memcpy(ses.payload->data, buf_getptr(ses.readbuf, len), len);
+		//buf_incrlen(ses.payload, len);
 	}
 	ses.readbuf = NULL;
 
@@ -362,20 +356,6 @@ static int checkmac() {
 	buf_setpos(ses.readbuf, 0);
 	make_mac(ses.recvseq, &ses.keys->recv, ses.readbuf, contents_len, mac_bytes);
 
-#if DROPBEAR_FUZZ
-	if (fuzz.fuzzing) {
-	 	/* fail 1 in 2000 times to test error path. */
-		unsigned int value = 0;
-		if (mac_size > sizeof(value)) {
-			memcpy(&value, mac_bytes, sizeof(value));
-		}
-		if (value % 2000 == 99) {
-			return DROPBEAR_FAILURE;
-		}
-		return DROPBEAR_SUCCESS;
-	}
-#endif
-
 	/* compare the hash */
 	buf_setpos(ses.readbuf, contents_len);
 	if (constant_time_memcmp(mac_bytes, buf_getptr(ses.readbuf, mac_size), mac_size) != 0) {
@@ -387,7 +367,7 @@ static int checkmac() {
 
 #ifndef DISABLE_ZLIB
 /* returns a pointer to a newly created buffer */
-static buffer* buf_decompress(const buffer* buf, unsigned int len) {
+static buffer* buf_decompress(buffer* buf, unsigned int len) {
 
 	int result;
 	buffer * ret;
@@ -596,13 +576,13 @@ void encrypt_packet() {
 	}
 	buf_incrpos(writebuf, len);
 
-	/* stick the MAC on it */
-	buf_putbytes(writebuf, mac_bytes, mac_size);
+    /* stick the MAC on it */
+    buf_putbytes(writebuf, mac_bytes, mac_size);
 
 	/* Update counts */
 	ses.kexstate.datatrans += writebuf->len;
 
-	writebuf_enqueue(writebuf);
+	writebuf_enqueue(writebuf, packet_type);
 
 	/* Update counts */
 	ses.transseq++;
@@ -622,11 +602,14 @@ void encrypt_packet() {
 	TRACE2(("leave encrypt_packet()"))
 }
 
-void writebuf_enqueue(buffer * writebuf) {
+void writebuf_enqueue(buffer * writebuf, unsigned char packet_type) {
+	/* The last byte of the buffer stores the cleartext packet_type. It is not
+	 * transmitted but is used for transmit timeout purposes */
+	buf_putbyte(writebuf, packet_type);
 	/* enqueue the packet for sending. It will get freed after transmission. */
 	buf_setpos(writebuf, 0);
 	enqueue(&ses.writequeue, (void*)writebuf);
-	ses.writequeue_len += writebuf->len;
+	ses.writequeue_len += writebuf->len-1;
 }
 
 
@@ -662,7 +645,7 @@ static void make_mac(unsigned int seqno, const struct key_context_directional * 
 			dropbear_exit("HMAC error");
 		}
 	
-		bufsize = MAX_MAC_LEN;
+        bufsize = MAX_MAC_LEN;
 		if (hmac_done(&hmac, output_mac, &bufsize) != CRYPT_OK) {
 			dropbear_exit("HMAC error");
 		}

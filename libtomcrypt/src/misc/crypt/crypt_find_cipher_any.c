@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -14,7 +16,7 @@
 */
 
 /**
-   Find a cipher flexibly.  First by name then if not present by block and key size
+   Find a cipher flexibly.  First by name then if not present by block and key size 
    @param name        The name of the cipher desired
    @param blocklen    The minimum length of the block cipher desired (octets)
    @param keylen      The minimum length of the key size desired (octets)
@@ -24,10 +26,10 @@ int find_cipher_any(const char *name, int blocklen, int keylen)
 {
    int x;
 
-   if(name != NULL) {
-      x = find_cipher(name);
-      if (x != -1) return x;
-   }
+   LTC_ARGCHK(name != NULL);
+
+   x = find_cipher(name);
+   if (x != -1) return x;
 
    LTC_MUTEX_LOCK(&ltc_cipher_mutex);
    for (x = 0; x < TAB_SIZE; x++) {
@@ -43,6 +45,6 @@ int find_cipher_any(const char *name, int blocklen, int keylen)
    return -1;
 }
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/misc/crypt/crypt_find_cipher_any.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/03/31 14:15:35 $ */

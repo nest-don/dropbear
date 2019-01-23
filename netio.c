@@ -19,7 +19,6 @@ struct dropbear_progress_connection {
 	int sock;
 
 	char* errstring;
-	char *bind_address, *bind_port;
 };
 
 /* Deallocate a progress connection. Removes from the pending list if iter!=NULL.
@@ -31,8 +30,6 @@ static void remove_connect(struct dropbear_progress_connection *c, m_list_elem *
 	m_free(c->remotehost);
 	m_free(c->remoteport);
 	m_free(c->errstring);
-	m_free(c->bind_address);
-	m_free(c->bind_port);
 	m_free(c);
 
 	if (iter) {
@@ -54,10 +51,9 @@ void cancel_connect(struct dropbear_progress_connection *c) {
 
 static void connect_try_next(struct dropbear_progress_connection *c) {
 	struct addrinfo *r;
-	int err;
 	int res = 0;
 	int fastopen = 0;
-#if DROPBEAR_CLIENT_TCP_FAST_OPEN
+#ifdef DROPBEAR_CLIENT_TCP_FAST_OPEN
 	struct msghdr message;
 #endif
 
@@ -65,54 +61,16 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 	{
 		dropbear_assert(c->sock == -1);
 
-		c->sock = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+		c->sock = socket(c->res_iter->ai_family, c->res_iter->ai_socktype, c->res_iter->ai_protocol);
 		if (c->sock < 0) {
 			continue;
-		}
-
-		if (c->bind_address || c->bind_port) {
-			/* bind to a source port/address */
-			struct addrinfo hints;
-			struct addrinfo *bindaddr = NULL;
-			memset(&hints, 0, sizeof(hints));
-			hints.ai_socktype = SOCK_STREAM;
-			hints.ai_family = r->ai_family;
-			hints.ai_flags = AI_PASSIVE;
-
-			err = getaddrinfo(c->bind_address, c->bind_port, &hints, &bindaddr);
-			if (err) {
-				int len = 100 + strlen(gai_strerror(err));
-				m_free(c->errstring);
-				c->errstring = (char*)m_malloc(len);
-				snprintf(c->errstring, len, "Error resolving bind address '%s' (port %s). %s", 
-						c->bind_address, c->bind_port, gai_strerror(err));
-				TRACE(("Error resolving bind: %s", gai_strerror(err)))
-				close(c->sock);
-				c->sock = -1;
-				continue;
-			}
-			res = bind(c->sock, bindaddr->ai_addr, bindaddr->ai_addrlen);
-			freeaddrinfo(bindaddr);
-			bindaddr = NULL;
-			if (res < 0) {
-				/* failure */
-				int keep_errno = errno;
-				int len = 300;
-				m_free(c->errstring);
-				c->errstring = m_malloc(len);
-				snprintf(c->errstring, len, "Error binding local address '%s' (port %s). %s", 
-						c->bind_address, c->bind_port, strerror(keep_errno));
-				close(c->sock);
-				c->sock = -1;
-				continue;
-			}
 		}
 
 		ses.maxfd = MAX(ses.maxfd, c->sock);
 		set_sock_nodelay(c->sock);
 		setnonblocking(c->sock);
 
-#if DROPBEAR_CLIENT_TCP_FAST_OPEN
+#ifdef DROPBEAR_CLIENT_TCP_FAST_OPEN
 		fastopen = (c->writequeue != NULL);
 
 		if (fastopen) {
@@ -172,8 +130,7 @@ static void connect_try_next(struct dropbear_progress_connection *c) {
 
 /* Connect via TCP to a host. */
 struct dropbear_progress_connection *connect_remote(const char* remotehost, const char* remoteport,
-	connect_callback cb, void* cb_data, 
-	const char* bind_address, const char* bind_port)
+	connect_callback cb, void* cb_data)
 {
 	struct dropbear_progress_connection *c = NULL;
 	int err;
@@ -203,13 +160,6 @@ struct dropbear_progress_connection *connect_remote(const char* remotehost, cons
 	} else {
 		c->res_iter = c->res;
 	}
-	
-	if (bind_address) {
-		c->bind_address = m_strdup(bind_address);
-	}
-	if (bind_port) {
-		c->bind_port = m_strdup(bind_port);
-	}
 
 	return c;
 }
@@ -224,6 +174,7 @@ void remove_connect_pending() {
 
 void set_connect_fds(fd_set *writefd) {
 	m_list_elem *iter;
+	TRACE(("enter set_connect_fds"))
 	iter = ses.conn_pending.first;
 	while (iter) {
 		m_list_elem *next_iter = iter->next;
@@ -246,8 +197,9 @@ void set_connect_fds(fd_set *writefd) {
 	}
 }
 
-void handle_connect_fds(const fd_set *writefd) {
+void handle_connect_fds(fd_set *writefd) {
 	m_list_elem *iter;
+	TRACE(("enter handle_connect_fds"))
 	for (iter = ses.conn_pending.first; iter; iter = iter->next) {
 		int val;
 		socklen_t vallen = sizeof(val);
@@ -281,13 +233,14 @@ void handle_connect_fds(const fd_set *writefd) {
 			return; 
 		}
 	}
+	TRACE(("leave handle_connect_fds - end iter"))
 }
 
 void connect_set_writequeue(struct dropbear_progress_connection *c, struct Queue *writequeue) {
 	c->writequeue = writequeue;
 }
 
-void packet_queue_to_iovec(const struct Queue *queue, struct iovec *iov, unsigned int *iov_count) {
+void packet_queue_to_iovec(struct Queue *queue, struct iovec *iov, unsigned int *iov_count) {
 	struct Link *l;
 	unsigned int i;
 	int len;
@@ -302,10 +255,10 @@ void packet_queue_to_iovec(const struct Queue *queue, struct iovec *iov, unsigne
 	for (l = queue->head, i = 0; i < *iov_count; l = l->link, i++)
 	{
 		writebuf = (buffer*)l->item;
-		len = writebuf->len - writebuf->pos;
+		len = writebuf->len - 1 - writebuf->pos;
 		dropbear_assert(len > 0);
-		TRACE2(("write_packet writev #%d len %d/%d", i,
-				len, writebuf->len))
+		TRACE2(("write_packet writev #%d  type %d len %d/%d", i, writebuf->data[writebuf->len-1],
+				len, writebuf->len-1))
 		iov[i].iov_base = buf_getptr(writebuf, len);
 		iov[i].iov_len = len;
 	}
@@ -316,7 +269,7 @@ void packet_queue_consume(struct Queue *queue, ssize_t written) {
 	int len;
 	while (written > 0) {
 		writebuf = (buffer*)examine(queue);
-		len = writebuf->len - writebuf->pos;
+		len = writebuf->len - 1 - writebuf->pos;
 		if (len > written) {
 			/* partial buffer write */
 			buf_incrpos(writebuf, written);
@@ -337,7 +290,7 @@ void set_sock_nodelay(int sock) {
 	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void*)&val, sizeof(val));
 }
 
-#if DROPBEAR_SERVER_TCP_FAST_OPEN
+#ifdef DROPBEAR_SERVER_TCP_FAST_OPEN
 void set_listen_fast_open(int sock) {
 	int qlen = MAX(MAX_UNAUTH_PER_IP, 5);
 	if (setsockopt(sock, SOL_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen)) != 0) {
@@ -353,16 +306,10 @@ void set_sock_priority(int sock, enum dropbear_prio prio) {
 #ifdef IPTOS_LOWDELAY
 	int iptos_val = 0;
 #endif
-#ifdef HAVE_LINUX_PKT_SCHED_H
+#ifdef SO_PRIORITY
 	int so_prio_val = 0;
 #endif
 
-#if DROPBEAR_FUZZ
-	if (fuzz.fuzzing) {
-		TRACE(("fuzzing skips set_sock_prio"))
-		return;
-	}
-#endif
 
 	/* Don't log ENOTSOCK errors so that this can harmlessly be called
 	 * on a client '-J' proxy pipe */
@@ -386,7 +333,7 @@ void set_sock_priority(int sock, enum dropbear_prio prio) {
 	}
 #endif
 
-#ifdef HAVE_LINUX_PKT_SCHED_H
+#ifdef SO_PRIORITY
 	if (prio == DROPBEAR_PRIO_LOWDELAY) {
 		so_prio_val = TC_PRIO_INTERACTIVE;
 	} else if (prio == DROPBEAR_PRIO_BULK) {
@@ -399,37 +346,6 @@ void set_sock_priority(int sock, enum dropbear_prio prio) {
 				strerror(errno));
 #endif
 
-}
-
-/* from openssh/canohost.c avoid premature-optimization */
-int get_sock_port(int sock) {
-	struct sockaddr_storage from;
-	socklen_t fromlen;
-	char strport[NI_MAXSERV];
-	int r;
-
-	/* Get IP address of client. */
-	fromlen = sizeof(from);
-	memset(&from, 0, sizeof(from));
-	if (getsockname(sock, (struct sockaddr *)&from, &fromlen) < 0) {
-		TRACE(("getsockname failed: %d", errno))
-		return 0;
-	}
-
-	/* Work around Linux IPv6 weirdness */
-	if (from.ss_family == AF_INET6)
-		fromlen = sizeof(struct sockaddr_in6);
-
-	/* Non-inet sockets don't have a port number. */
-	if (from.ss_family != AF_INET && from.ss_family != AF_INET6)
-		return 0;
-
-	/* Return port number. */
-	if ((r = getnameinfo((struct sockaddr *)&from, fromlen, NULL, 0,
-	    strport, sizeof(strport), NI_NUMERICSERV)) != 0) {
-		TRACE(("netio.c/get_sock_port/getnameinfo NI_NUMERICSERV failed: %d", r))
-	}
-	return atoi(strport);
 }
 
 /* Listen on address:port. 
@@ -484,28 +400,10 @@ int dropbear_listen(const char* address, const char* port,
 		return -1;
 	}
 
-	/*
-	 * when listening on server-assigned-port 0
-	 * the assigned ports may differ for address families (v4/v6)
-	 * causing problems for tcpip-forward
-	 * caller can do a get_socket_address to discover assigned-port
-	 * hence, use same port for all address families
-	 */
-	u_int16_t *allocated_lport_p = NULL;
-	int allocated_lport = 0;
 
 	nsock = 0;
 	for (res = res0; res != NULL && nsock < sockcount;
 			res = res->ai_next) {
-
-		if (allocated_lport > 0) {
-			if (AF_INET == res->ai_family) {
-				allocated_lport_p = &((struct sockaddr_in *)res->ai_addr)->sin_port;
-			} else if (AF_INET6 == res->ai_family) {
-				allocated_lport_p = &((struct sockaddr_in6 *)res->ai_addr)->sin6_port;
-			}
-			*allocated_lport_p = htons(allocated_lport);
-		}
 
 		/* Get a socket */
 		socks[nsock] = socket(res->ai_family, res->ai_socktype,
@@ -553,10 +451,6 @@ int dropbear_listen(const char* address, const char* port,
 			continue;
 		}
 
-		if (0 == allocated_lport) {
-			allocated_lport = get_sock_port(sock);
-		}
-
 		*maxfd = MAX(*maxfd, sock);
 
 		nsock++;
@@ -587,13 +481,6 @@ void get_socket_address(int fd, char **local_host, char **local_port,
 {
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
-
-#if DROPBEAR_FUZZ
-	if (fuzz.fuzzing) {
-		fuzz_get_socket_address(fd, local_host, local_port, remote_host, remote_port, host_lookup);
-		return;
-	}
-#endif
 	
 	if (local_host || local_port) {
 		addrlen = sizeof(addr);
@@ -623,7 +510,7 @@ void getaddrstring(struct sockaddr_storage* addr,
 	
 	int flags = NI_NUMERICSERV | NI_NUMERICHOST;
 
-#if !DO_HOST_LOOKUP
+#ifndef DO_HOST_LOOKUP
 	host_lookup = 0;
 #endif
 	

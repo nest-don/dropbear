@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_MOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,10 +12,10 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
-/* c = a mod b, 0 <= c < b if b > 0, b < c <= 0 if b < 0 */
+/* c = a mod b, 0 <= c < b */
 int
 mp_mod (mp_int * a, mp_int * b, mp_int * c)
 {
@@ -31,11 +31,11 @@ mp_mod (mp_int * a, mp_int * b, mp_int * c)
     return res;
   }
 
-  if ((mp_iszero(&t) != MP_NO) || (t.sign == b->sign)) {
+  if (t.sign != b->sign) {
+    res = mp_add (b, &t, c);
+  } else {
     res = MP_OKAY;
     mp_exch (&t, c);
-  } else {
-    res = mp_add (b, &t, c);
   }
 
   mp_clear (&t);
@@ -43,6 +43,6 @@ mp_mod (mp_int * a, mp_int * b, mp_int * c)
 }
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_mod.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

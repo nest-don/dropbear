@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -31,10 +33,10 @@ int ctr_done(symmetric_CTR *ctr)
    return CRYPT_OK;
 }
 
-
+   
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/ctr/ctr_done.c,v $ */
+/* $Revision: 1.6 $ */
+/* $Date: 2006/06/29 01:46:46 $ */

@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -86,9 +88,9 @@ int der_decode_ia5_string(const unsigned char *in, unsigned long inlen,
 
    return CRYPT_OK;
 }
-
+ 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/asn1/der/ia5/der_decode_ia5_string.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/06/16 21:53:41 $ */

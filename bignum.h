@@ -25,12 +25,12 @@
 #ifndef DROPBEAR_BIGNUM_H_
 #define DROPBEAR_BIGNUM_H_
 
-#include "dbhelpers.h"
+#include "includes.h"
+#include "dbutil.h"
 
 void m_mp_init(mp_int *mp);
 void m_mp_init_multi(mp_int *mp, ...) ATTRIB_SENTINEL;
 void m_mp_alloc_init_multi(mp_int **mp, ...) ATTRIB_SENTINEL;
-void m_mp_free_multi(mp_int **mp, ...)  ATTRIB_SENTINEL;
 void bytes_to_mp(mp_int *mp, const unsigned char* bytes, unsigned int len);
 void hash_process_mp(const struct ltc_hash_descriptor *hash_desc, 
 				hash_state *hs, mp_int *mp);

@@ -1,0 +1,4 @@
+dropbear /usr/sbin
+dbclient /usr/bin
+dropbearkey /usr/bin
+dropbearconvert /usr/lib/dropbear

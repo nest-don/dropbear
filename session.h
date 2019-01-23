@@ -26,6 +26,7 @@
 #define DROPBEAR_SESSION_H_
 
 #include "includes.h"
+#include "options.h"
 #include "buffer.h"
 #include "signkey.h"
 #include "kex.h"
@@ -39,16 +40,19 @@
 #include "dbutil.h"
 #include "netio.h"
 
+extern int sessinitdone; /* Is set to 0 somewhere */
+extern int exitflag;
+
 void common_session_init(int sock_in, int sock_out);
-void session_loop(void(*loophandler)(void)) ATTRIB_NORETURN;
-void session_cleanup(void);
-void send_session_identification(void);
-void send_msg_ignore(void);
-void ignore_recv_response(void);
+void session_loop(void(*loophandler)()) ATTRIB_NORETURN;
+void session_cleanup();
+void send_session_identification();
+void send_msg_ignore();
+void ignore_recv_response();
 
-void update_channel_prio(void);
+void update_channel_prio();
 
-const char* get_user_shell(void);
+const char* get_user_shell();
 void fill_passwd(const char* username);
 
 /* Server */
@@ -57,10 +61,9 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) ATTRIB_N
 void svr_dropbear_log(int priority, const char* format, va_list param);
 
 /* Client */
-void cli_session(int sock_in, int sock_out, struct dropbear_progress_connection *progress, pid_t proxy_cmd_pid) ATTRIB_NORETURN;
+void cli_session(int sock_in, int sock_out, struct dropbear_progress_connection *progress) ATTRIB_NORETURN;
 void cli_connected(int result, int sock, void* userdata, const char *errstring);
 void cleantext(char* dirtytext);
-void kill_proxy_command(void);
 
 /* crypto parameters that are stored individually for transmit and receive */
 struct key_context_directional {
@@ -75,7 +78,7 @@ struct key_context_directional {
 	/* actual keys */
 	union {
 		symmetric_CBC cbc;
-#if DROPBEAR_ENABLE_CTR_MODE
+#ifdef DROPBEAR_ENABLE_CTR_MODE
 		symmetric_CTR ctr;
 #endif
 	} cipher_state;
@@ -153,7 +156,6 @@ struct sshsession {
 	
 	int signal_pipe[2]; /* stores endpoints of a self-pipe used for
 						   race-free signal handling */
-	int channel_signal_pending; /* Flag set when the signal pipe is triggered */
 
 	m_list conn_pending;
 						
@@ -186,11 +188,11 @@ struct sshsession {
 	   concluded (ie, while dataallowed was unset)*/
 	struct packetlist *reply_queue_head, *reply_queue_tail;
 
-	void(*remoteclosed)(void); /* A callback to handle closure of the
+	void(*remoteclosed)(); /* A callback to handle closure of the
 									  remote connection */
 
-	void(*extra_session_cleanup)(void); /* client or server specific cleanup */
-	void(*send_kex_first_guess)(void);
+	void(*extra_session_cleanup)(); /* client or server specific cleanup */
+	void(*send_kex_first_guess)();
 
 	struct AuthState authstate; /* Common amongst client and server, since most
 								   struct elements are common */
@@ -200,6 +202,7 @@ struct sshsession {
 	unsigned int chansize; /* the number of Channel*s allocated for channels */
 	unsigned int chancount; /* the number of Channel*s in use */
 	const struct ChanType **chantypes; /* The valid channel types */
+	int channel_signal_pending; /* Flag set by sigchld handler */
 
 	/* TCP priority level for the main "port 22" tcp socket */
 	enum dropbear_prio socket_prio;
@@ -212,10 +215,6 @@ struct sshsession {
 	 * really belong here, but nowhere else fits nicely */
 	int allowprivport;
 
-	/* this is set when we get SIGINT or SIGTERM, the handler is in main.c */
-	volatile int exitflag;
-	/* set once the ses structure (and cli_ses/svr_ses) have been populated to their initial state */
-	int init_done;
 };
 
 struct serversession {
@@ -237,7 +236,7 @@ struct serversession {
 	/* The resolved remote address, used for lastlog etc */
 	char *remotehost;
 
-#if DROPBEAR_VFORK
+#ifdef USE_VFORK
 	pid_t server_pid;
 #endif
 
@@ -283,18 +282,20 @@ struct clientsession {
 	/* for escape char handling */
 	int last_char;
 
-	volatile int winchange; /* Set to 1 when a windowchange signal happens */
+	int winchange; /* Set to 1 when a windowchange signal happens */
 
 	int lastauthtype; /* either AUTH_TYPE_PUBKEY or AUTH_TYPE_PASSWORD,
 						 for the last type of auth we tried */
 	int ignore_next_auth_response;
-#if DROPBEAR_CLI_INTERACT_AUTH
+#ifdef ENABLE_CLI_INTERACT_AUTH
 	int auth_interact_failed; /* flag whether interactive auth can still
 								 be used */
 	int interact_request_received; /* flag whether we've received an 
 									  info request from the server for
 									  interactive auth.*/
 #endif
+	int cipher_none_after_auth; /* Set to 1 if the user requested "none"
+								   auth */
 	sign_key *lastprivkey;
 
 	int retval; /* What the command exit status was - we emulate it */
@@ -303,17 +304,16 @@ struct clientsession {
 	struct AgentkeyList *agentkeys; /* Keys to use for public-key auth */
 #endif
 
-	pid_t proxy_cmd_pid;
 };
 
 /* Global structs storing the state */
 extern struct sshsession ses;
 
-#if DROPBEAR_SERVER
+#ifdef DROPBEAR_SERVER
 extern struct serversession svr_ses;
 #endif /* DROPBEAR_SERVER */
 
-#if DROPBEAR_CLIENT
+#ifdef DROPBEAR_CLIENT
 extern struct clientsession cli_ses;
 #endif /* DROPBEAR_CLIENT */
 

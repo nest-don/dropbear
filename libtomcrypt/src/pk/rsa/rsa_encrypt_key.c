@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -13,7 +15,7 @@
   RSA PKCS #1 encryption, Tom St Denis and Andreas Lange
 */
 
-#ifdef LTC_MRSA
+#ifdef MRSA
 
 /**
     (PKCS #1 v2.0) OAEP pad then encrypt
@@ -93,8 +95,8 @@ int rsa_encrypt_key_ex(const unsigned char *in,     unsigned long inlen,
   return ltc_mp.rsa_me(out, x, out, outlen, PK_PUBLIC, key);
 }
 
-#endif /* LTC_MRSA */
+#endif /* MRSA */
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/rsa/rsa_encrypt_key.c,v $ */
+/* $Revision: 1.8 $ */
+/* $Date: 2006/11/01 09:18:22 $ */

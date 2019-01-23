@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_FREAD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,10 +12,9 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
-#ifndef LTM_NO_FILE
 /* read a bigint from a file stream in ASCII */
 int mp_fread(mp_int *a, int radix, FILE *stream)
 {
@@ -60,10 +59,9 @@ int mp_fread(mp_int *a, int radix, FILE *stream)
    
    return MP_OKAY;
 }
-#endif
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_fread.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

@@ -1,0 +1,15 @@
+#! /bin/sh
+set -e
+
+#DEBHELPER#
+
+[ "$1" = purge ] || exit 0
+
+if [ -e /etc/dropbear ]; then
+    rm -rf /etc/dropbear/supervise /etc/dropbear/log/supervise
+    rm -f /etc/dropbear/dropbear_rsa_host_key
+    rm -f /etc/dropbear/dropbear_dss_host_key
+    rm -f /etc/dropbear/dropbear_ecdsa_host_key
+    rmdir --ignore-fail-on-non-empty /etc/dropbear
+fi
+rm -f /etc/default/dropbear

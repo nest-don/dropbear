@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 /* Implements ECC over Z/pZ for curve y^2 = x^3 - 3x + b
@@ -17,9 +19,9 @@
 /**
   @file ecc_test.c
   ECC Crypto, Tom St Denis
-*/
+*/  
 
-#ifdef LTC_MECC
+#ifdef MECC
 
 /**
   Perform on the ECC system
@@ -87,7 +89,7 @@ done:
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/ecc/ecc_test.c,v $ */
+/* $Revision: 1.10 $ */
+/* $Date: 2006/12/04 02:19:48 $ */
 

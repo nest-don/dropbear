@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_MP_EXPTMOD_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 
@@ -89,7 +89,7 @@ int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
     
   /* if the modulus is odd or dr != 0 use the montgomery method */
 #ifdef BN_MP_EXPTMOD_FAST_C
-  if ((mp_isodd (P) == MP_YES) || (dr !=  0)) {
+  if (mp_isodd (P) == 1 || dr !=  0) {
     return mp_exptmod_fast (G, X, P, Y, dr);
   } else {
 #endif
@@ -107,6 +107,6 @@ int mp_exptmod (mp_int * G, mp_int * X, mp_int * P, mp_int * Y)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_mp_exptmod.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

@@ -1,0 +1,4 @@
+#!/usr/bin/dh-exec
+
+debian/service/run => etc/dropbear/run
+debian/service/log => etc/dropbear/log/run

@@ -1,0 +1,41 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+
+# export DH_OPTIONS
+DEB_HOST_GNU_TYPE ?=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE ?=$(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+CONFFLAGS =
+ifneq ($(DEB_HOST_GNU_TYPE),$(DEB_BUILD_GNU_TYPE))
+  CC = $(DEB_HOST_GNU_TYPE)-gcc
+else
+  CC = gcc
+endif
+
+ifneq (,$(findstring diet,$(DEB_BUILD_OPTIONS)))
+  CONFFLAGS =--disable-zlib
+  CC =diet -v -Os gcc -nostdinc
+endif
+
+%:
+	dh $@ --with=autoreconf
+
+override_dh_installinit:
+	dh_installinit -R --name dropbear
+
+override_dh_auto_configure:
+	dh_auto_configure -- --enable-bundled-libtom \
+	  CC='$(CC)' CFLAGS='$(CFLAGS) -DSFTPSERVER_PATH="\"/usr/lib/sftp-server\""' \
+	  $(CONFFLAGS)
+
+override_dh_installdocs:
+	dh_installdocs -Ndropbear-run -Ndropbear-initramfs
+	dh_installdocs -pdropbear-run -pdropbear-initramfs --link-doc=dropbear-bin
+
+override_dh_install:
+	dh_link -pdropbear-run /var/log/dropbear etc/dropbear/log/main
+	dh_link -pdropbear-initramfs /etc/initramfs-tools/conf-hooks.d/dropbear usr/share/initramfs-tools/conf-hooks.d/dropbear
+	dh_install

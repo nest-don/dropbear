@@ -30,19 +30,19 @@
 #include "queue.h"
 #include "buffer.h"
 
-void write_packet(void);
-void read_packet(void);
-void decrypt_packet(void);
-void encrypt_packet(void);
+void write_packet();
+void read_packet();
+void decrypt_packet();
+void encrypt_packet();
 
-void writebuf_enqueue(buffer * writebuf);
+void writebuf_enqueue(buffer * writebuf, unsigned char packet_type);
 
-void process_packet(void);
+void process_packet();
 
-void maybe_flush_reply_queue(void);
+void maybe_flush_reply_queue();
 typedef struct PacketType {
 	unsigned char type; /* SSH_MSG_FOO */
-	void (*handler)(void);
+	void (*handler)();
 } packettype;
 
 #define PACKET_PADDING_OFF 4

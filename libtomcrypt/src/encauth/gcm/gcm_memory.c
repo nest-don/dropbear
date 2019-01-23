@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 /**
@@ -13,15 +15,15 @@
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_GCM_MODE
+#ifdef GCM_MODE
 
 /**
   Process an entire GCM packet in one call.
   @param cipher            Index of cipher to use
   @param key               The secret key
   @param keylen            The length of the secret key
-  @param IV                The initialization vector
-  @param IVlen             The length of the initialization vector
+  @param IV                The initial vector 
+  @param IVlen             The length of the initial vector
   @param adata             The additional authentication data (header)
   @param adatalen          The length of the adata
   @param pt                The plaintext
@@ -37,7 +39,7 @@ int gcm_memory(      int           cipher,
                const unsigned char *IV,     unsigned long IVlen,
                const unsigned char *adata,  unsigned long adatalen,
                      unsigned char *pt,     unsigned long ptlen,
-                     unsigned char *ct,
+                     unsigned char *ct, 
                      unsigned char *tag,    unsigned long *taglen,
                                int direction)
 {
@@ -48,9 +50,10 @@ int gcm_memory(      int           cipher,
     if ((err = cipher_is_valid(cipher)) != CRYPT_OK) {
        return err;
     }
-
+ 
     if (cipher_descriptor[cipher].accel_gcm_memory != NULL) {
-       return cipher_descriptor[cipher].accel_gcm_memory
+       return 
+         cipher_descriptor[cipher].accel_gcm_memory
                                           (key,   keylen,
                                            IV,    IVlen,
                                            adata, adatalen,
@@ -62,7 +65,7 @@ int gcm_memory(      int           cipher,
 
 
 
-#ifndef LTC_GCM_TABLES_SSE2
+#ifndef GCM_TABLES_SSE2
     orig = gcm = XMALLOC(sizeof(*gcm));
 #else
     orig = gcm = XMALLOC(sizeof(*gcm) + 16);
@@ -75,7 +78,7 @@ int gcm_memory(      int           cipher,
     * note that we only modify gcm and keep orig intact.  This code is not portable
     * but again it's only for SSE2 anyways, so who cares?
     */
-#ifdef LTC_GCM_TABLES_SSE2
+#ifdef GCM_TABLES_SSE2
    if ((unsigned long)gcm & 15) {
       gcm = (gcm_state *)((unsigned long)gcm + (16 - ((unsigned long)gcm & 15)));
    }
@@ -101,6 +104,6 @@ LTC_ERR:
 #endif
 
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/encauth/gcm/gcm_memory.c,v $ */
+/* $Revision: 1.23 $ */
+/* $Date: 2006/09/07 10:00:57 $ */

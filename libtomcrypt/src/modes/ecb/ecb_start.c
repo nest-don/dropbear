@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -19,7 +21,7 @@
 /**
    Initialize a ECB context
    @param cipher      The index of the cipher desired
-   @param key         The secret key
+   @param key         The secret key 
    @param keylen      The length of the secret key (octets)
    @param num_rounds  Number of rounds in the cipher desired (0 for default)
    @param ecb         The ECB state to initialize
@@ -41,6 +43,6 @@ int ecb_start(int cipher, const unsigned char *key, int keylen, int num_rounds, 
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/ecb/ecb_start.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/06/29 01:51:34 $ */

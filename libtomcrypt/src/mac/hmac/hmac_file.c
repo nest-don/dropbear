@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -25,8 +27,8 @@
   @param outlen   [in/out]  The max size and resulting size of the authentication tag
   @return CRYPT_OK if successful, CRYPT_NOP if file support has been disabled
 */
-int hmac_file(int hash, const char *fname,
-              const unsigned char *key, unsigned long keylen,
+int hmac_file(int hash, const char *fname, 
+              const unsigned char *key, unsigned long keylen, 
                     unsigned char *out, unsigned long *outlen)
 {
 #ifdef LTC_NO_FILE
@@ -35,7 +37,7 @@ int hmac_file(int hash, const char *fname,
 #else
    hmac_state hmac;
    FILE *in;
-   unsigned char *buf;
+   unsigned char buf[512];
    size_t x;
    int err;
 
@@ -43,53 +45,50 @@ int hmac_file(int hash, const char *fname,
    LTC_ARGCHK(key    != NULL);
    LTC_ARGCHK(out    != NULL);
    LTC_ARGCHK(outlen != NULL);
-
-   if ((buf = XMALLOC(LTC_FILE_READ_BUFSIZE)) == NULL) {
-      return CRYPT_MEM;
-   }
-
-   if ((err = hash_is_valid(hash)) != CRYPT_OK) {
-      goto LBL_ERR;
+   
+   if((err = hash_is_valid(hash)) != CRYPT_OK) {
+       return err;
    }
 
    if ((err = hmac_init(&hmac, hash, key, keylen)) != CRYPT_OK) {
-      goto LBL_ERR;
+       return err;
    }
 
    in = fopen(fname, "rb");
    if (in == NULL) {
-      err = CRYPT_FILE_NOTFOUND;
-      goto LBL_ERR;
+      return CRYPT_FILE_NOTFOUND;
    }
 
+   /* process the file contents */
    do {
-      x = fread(buf, 1, LTC_FILE_READ_BUFSIZE, in);
+      x = fread(buf, 1, sizeof(buf), in);
       if ((err = hmac_process(&hmac, buf, (unsigned long)x)) != CRYPT_OK) {
-         fclose(in); /* we don't trap this error since we're already returning an error! */
-         goto LBL_CLEANBUF;
+         /* we don't trap this error since we're already returning an error! */
+         fclose(in);
+         return err;
       }
-   } while (x == LTC_FILE_READ_BUFSIZE);
+   } while (x == sizeof(buf));
 
    if (fclose(in) != 0) {
-      err = CRYPT_ERROR;
-      goto LBL_CLEANBUF;
+      return CRYPT_ERROR;
    }
 
-   err = hmac_done(&hmac, out, outlen);
+   /* get final hmac */
+   if ((err = hmac_done(&hmac, out, outlen)) != CRYPT_OK) {
+      return err;
+   }
 
-LBL_CLEANBUF:
-   zeromem(buf, LTC_FILE_READ_BUFSIZE);
-LBL_ERR:
 #ifdef LTC_CLEAN_STACK
-   zeromem(&hmac, sizeof(hmac_state));
-#endif
-   XFREE(buf);
-   return err;
+   /* clear memory */
+   zeromem(buf, sizeof(buf));
+#endif   
+   return CRYPT_OK;
 #endif
 }
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+
+/* $Source: /cvs/libtom/libtomcrypt/src/mac/hmac/hmac_file.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/11/03 00:39:49 $ */

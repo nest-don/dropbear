@@ -5,15 +5,17 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
-/**
+/** 
    @file pelican_memory.c
-   Pelican MAC, MAC a block of memory, by Tom St Denis
+   Pelican MAC, MAC a block of memory, by Tom St Denis 
 */
 
-#ifdef LTC_PELICAN
+#ifdef PELICAN
 
 /**
   Pelican block of memory
@@ -21,7 +23,7 @@
   @param keylen   The length of the key (octets)
   @param in       The input to MAC
   @param inlen    The length of the input (octets)
-  @param out      [out] The output TAG
+  @param out      [out] The output TAG 
   @return CRYPT_OK on success
 */
 int pelican_memory(const unsigned char *key, unsigned long keylen,
@@ -32,7 +34,7 @@ int pelican_memory(const unsigned char *key, unsigned long keylen,
    int err;
 
    pel = XMALLOC(sizeof(*pel));
-   if (pel == NULL) {
+   if (pel == NULL) { 
       return CRYPT_MEM;
    }
 
@@ -45,13 +47,13 @@ int pelican_memory(const unsigned char *key, unsigned long keylen,
       return err;
    }
    err = pelican_done(pel, out);
-   XFREE(pel);
+   XFREE(pel); 
    return err;
 }
 
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/mac/pelican/pelican_memory.c,v $ */
+/* $Revision: 1.6 $ */
+/* $Date: 2006/03/31 14:15:35 $ */

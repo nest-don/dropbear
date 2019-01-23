@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -16,8 +18,8 @@
 
 #ifdef LTC_DER
 /**
-  Gets length of DER encoding of num
-  @param num    The int to get the size of
+  Gets length of DER encoding of num 
+  @param num    The int to get the size of 
   @param outlen [out] The length of the DER encoding for the given integer
   @return CRYPT_OK if successful
 */
@@ -44,6 +46,7 @@ int der_length_integer(void *num, unsigned long *outlen)
    } else {
       /* it's negative */
       /* find power of 2 that is a multiple of eight and greater than count bits */
+      leading_zero = 0;
       z = mp_count_bits(num);
       z = z + (8 - (z & 7));
       if (((mp_cnt_lsb(num)+1)==mp_count_bits(num)) && ((mp_count_bits(num)&7)==0)) --z;
@@ -68,12 +71,12 @@ int der_length_integer(void *num, unsigned long *outlen)
    ++len;
 
    /* return length */
-   *outlen = len;
+   *outlen = len; 
    return CRYPT_OK;
 }
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/asn1/der/integer/der_length_integer.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/04/22 01:22:55 $ */

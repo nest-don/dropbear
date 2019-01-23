@@ -1,28 +1,20 @@
 Basic Dropbear build instructions:
 
-- Edit localoptions.h to set which features you want. Available options
-  are described in default_options.h, these will be overridden by
-  anything set in localoptions.h
-  localoptions.h should be located in the build directory if you are
-  building out of tree.
+- Edit options.h to set which features you want.
+- Edit debug.h if you want any debug options (not usually required).
 
-- If using a Mercurial or Git checkout, "autoconf; autoheader"
+(If using a non-tarball copy, "autoconf; autoheader")
 
-- Configure for your system:
-  ./configure     (optionally with --disable-zlib or --disable-syslog,
+./configure      (optionally with --disable-zlib or --disable-syslog,
                   or --help for other options)
 
-- Compile:
+Now compile:
 
-  make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp"
+make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp"
 
-- Optionally install, or copy the binaries another way
+And install (/usr/local/bin is usual default):
 
-  make install (/usr/local/bin is usual default):
-
-  or
-
-  make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" install
+make PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" install
 
 (you can leave items out of the PROGRAMS list to avoid compiling them. If you
 recompile after changing the PROGRAMS list, you *MUST* "make clean" before
@@ -30,11 +22,7 @@ recompiling - bad things will happen otherwise)
 
 See MULTI for instructions on making all-in-one binaries.
 
-If you want to compile statically use ./configure --enable-static
-
-By default Dropbear adds various build flags that improve robustness 
-against programming bugs (good for security). If these cause problems
-they can be disabled with ./configure --disable-harden
+If you want to compile statically, add "STATIC=1" to the make command-line.
 
 Binaries can be stripped with "make strip"
 

@@ -1,0 +1,65 @@
+#!/bin/sh
+
+PREREQ=""
+
+prereqs() {
+    echo "$PREREQ"
+}
+
+case "$1" in
+    prereqs)
+        prereqs
+        exit 0
+    ;;
+esac
+
+. "$CONFDIR/initramfs.conf"
+. /usr/share/initramfs-tools/hook-functions
+
+# Copy dropbear if explicitly enabled, or in case of a cryptroot setup if not explicitly disabled
+[ "$DROPBEAR" = y ] || [ "$DROPBEAR" != n -a -r /etc/crypttab ] || exit 0
+
+if [ ! -x "/usr/sbin/dropbear" ]; then
+    if [ "$DROPBEAR" = y ]; then
+        echo "dropbear: FAILURE: Dropbear not found!" >&2
+    else
+        echo "dropbear: WARNING: Dropbear not found, remote unlocking of cryptroot via ssh won't work!" >&2
+    fi
+    exit 0
+fi
+
+copy_exec /usr/sbin/dropbear /sbin
+LIBC_DIR=$(ldd /usr/sbin/dropbear | sed -nr 's#.* => (/lib.*)/libc\.so\.[0-9.-]+ \(0x[[:xdigit:]]+\)$#\1#p')
+find -L "$LIBC_DIR" -maxdepth 1 -name 'libnss_files.*' -type f | while read so; do
+    copy_exec "$so"
+done
+
+home=$(mktemp -d "$DESTDIR/root-XXXXXX")
+chmod 0700 "$home"
+for x in passwd group; do echo "$x: files"; done >"$DESTDIR/etc/nsswitch.conf"
+echo "root:*:0:0::${home#$DESTDIR}:/bin/sh" >"$DESTDIR/etc/passwd"
+echo "root:!:0:" >"$DESTDIR/etc/group"
+
+# Copy host keys
+if [ -d /etc/initramfs-tools/etc/dropbear ]; then
+    cp -R /etc/initramfs-tools/etc/dropbear "$DESTDIR/etc"
+elif [ ! -s /etc/initramfs-tools/etc/dropbear/dropbear_dss_host_key -a \
+       ! -s /etc/initramfs-tools/etc/dropbear/dropbear_rsa_host_key -a \
+       ! -s /etc/initramfs-tools/etc/dropbear/dropbear_ecdsa_host_key ]; then
+    echo "dropbear: WARNING: Missing host keys, remote unlocking of cryptroot via ssh won't work!" >&2
+fi
+
+# Copy authorized_keys
+mkdir -m0700 "$home/.ssh"
+if [ -e /etc/initramfs-tools/root/.ssh/authorized_keys ]; then
+    cat /etc/initramfs-tools/root/.ssh/authorized_keys
+else
+    for keytype in dsa rsa ecdsa; do
+        pubkey="/etc/initramfs-tools/root/.ssh/id_${keytype}.pub"
+        [ -e "$pubkey" ] && cat "$pubkey"
+    done
+fi >"$home/.ssh/authorized_keys"
+
+if ! grep -qE '^([^#]+ )?(ssh-(dss|rsa)|ecdsa-sha2-nistp(256|384|521)) ' "$home/.ssh/authorized_keys"; then
+    echo "dropbear: WARNING: Invalid authorized_keys file, remote unlocking of cryptroot via ssh won't work!" >&2
+fi

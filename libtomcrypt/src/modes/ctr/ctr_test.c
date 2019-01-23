@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -50,7 +52,7 @@ int ctr_test(void)
   unsigned char buf[64];
   symmetric_CTR ctr;
 
-  /* AES can be under rijndael or aes... try to find it */
+  /* AES can be under rijndael or aes... try to find it */ 
   if ((idx = find_cipher("aes")) == -1) {
      if ((idx = find_cipher("rijndael")) == -1) {
         return CRYPT_NOP;
@@ -65,7 +67,7 @@ int ctr_test(void)
         return err;
      }
      ctr_done(&ctr);
-     if (compare_testvector(buf, tests[x].msglen, tests[x].ct, tests[x].msglen, "CTR", x)) {
+     if (XMEMCMP(buf, tests[x].ct, tests[x].msglen)) {
         return CRYPT_FAIL_TESTVECTOR;
      }
   }
@@ -75,9 +77,9 @@ int ctr_test(void)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/modes/ctr/ctr_test.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/11/05 02:06:49 $ */
 
 
 

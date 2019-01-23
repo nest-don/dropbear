@@ -1,4 +1,4 @@
-#include <tommath_private.h>
+#include <tommath.h>
 #ifdef BN_ERROR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
@@ -12,12 +12,12 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tstdenis82@gmail.com, http://libtom.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 static const struct {
      int code;
-     const char *msg;
+     char *msg;
 } msgs[] = {
      { MP_OKAY, "Successful" },
      { MP_MEM,  "Out of heap" },
@@ -25,7 +25,7 @@ static const struct {
 };
 
 /* return a char * string for a given code */
-const char *mp_error_to_string(int code)
+char *mp_error_to_string(int code)
 {
    int x;
 
@@ -42,6 +42,6 @@ const char *mp_error_to_string(int code)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtommath/bn_error.c,v $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/03/31 14:18:44 $ */

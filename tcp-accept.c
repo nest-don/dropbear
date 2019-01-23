@@ -33,9 +33,9 @@
 #include "listener.h"
 #include "runopts.h"
 
-#if DROPBEAR_TCP_ACCEPT
+#ifdef DROPBEAR_TCP_ACCEPT
 
-static void cleanup_tcp(const struct Listener *listener) {
+static void cleanup_tcp(struct Listener *listener) {
 
 	struct TCPListener *tcpinfo = (struct TCPListener*)(listener->typedata);
 
@@ -52,22 +52,22 @@ int tcp_prio_inithandler(struct Channel* channel)
 	return 0;
 }
 
-static void tcp_acceptor(const struct Listener *listener, int sock) {
+static void tcp_acceptor(struct Listener *listener, int sock) {
 
 	int fd;
-	struct sockaddr_storage sa;
+	struct sockaddr_storage addr;
 	socklen_t len;
 	char ipstring[NI_MAXHOST], portstring[NI_MAXSERV];
 	struct TCPListener *tcpinfo = (struct TCPListener*)(listener->typedata);
 
-	len = sizeof(sa);
+	len = sizeof(addr);
 
-	fd = accept(sock, (struct sockaddr*)&sa, &len);
+	fd = accept(sock, (struct sockaddr*)&addr, &len);
 	if (fd < 0) {
 		return;
 	}
 
-	if (getnameinfo((struct sockaddr*)&sa, len, ipstring, sizeof(ipstring),
+	if (getnameinfo((struct sockaddr*)&addr, len, ipstring, sizeof(ipstring),
 				portstring, sizeof(portstring), 
 				NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
 		m_close(fd);
@@ -110,18 +110,18 @@ static void tcp_acceptor(const struct Listener *listener, int sock) {
 	}
 }
 
-int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener) {
+int listen_tcpfwd(struct TCPListener* tcpinfo) {
 
 	char portstring[NI_MAXSERV];
 	int socks[DROPBEAR_MAX_SOCKS];
+	struct Listener *listener = NULL;
 	int nsocks;
-	struct Listener *listener;
 	char* errstring = NULL;
 
 	TRACE(("enter listen_tcpfwd"))
 
 	/* first we try to bind, so don't need to do so much cleanup on failure */
-	snprintf(portstring, sizeof(portstring), "%u", tcpinfo->listenport);
+	snprintf(portstring, sizeof(portstring), "%d", tcpinfo->listenport);
 
 	nsocks = dropbear_listen(tcpinfo->listenaddr, portstring, socks, 
 			DROPBEAR_MAX_SOCKS, &errstring, &ses.maxfd);
@@ -140,10 +140,6 @@ int listen_tcpfwd(struct TCPListener* tcpinfo, struct Listener **ret_listener) {
 	if (listener == NULL) {
 		TRACE(("leave listen_tcpfwd: listener failed"))
 		return DROPBEAR_FAILURE;
-	}
-
-	if (ret_listener) {
-		*ret_listener = listener;
 	}
 
 	TRACE(("leave listen_tcpfwd: success"))

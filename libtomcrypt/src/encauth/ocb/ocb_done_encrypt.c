@@ -5,17 +5,19 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
-/**
+/** 
    @file ocb_done_encrypt.c
    OCB implementation, terminate encryption, by Tom St Denis
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_OCB_MODE
+#ifdef OCB_MODE
 
-/**
+/** 
    Terminate an encryption OCB state
    @param ocb       The OCB state
    @param pt        Remaining plaintext (if any)
@@ -39,6 +41,6 @@ int ocb_done_encrypt(ocb_state *ocb, const unsigned char *pt, unsigned long ptle
 #endif
 
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/encauth/ocb/ocb_done_encrypt.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/03/31 14:15:35 $ */

@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
@@ -13,17 +15,16 @@
    RMD320 hash function
 */
 
-#ifdef LTC_RIPEMD320
+#ifdef RIPEMD320
 
 const struct ltc_hash_descriptor rmd320_desc =
 {
     "rmd320",
-    14,
-    40,
+    9,
+    20,
     64,
 
-    /* OID ... does not exist
-     * http://oid-info.com/get/1.3.36.3.2 */
+    /* OID */
    { 0 },
    0,
 
@@ -431,8 +432,8 @@ int rmd320_test(void)
    return CRYPT_NOP;
 #else
    static const struct {
-        const char *msg;
-        unsigned char hash[40];
+        char *msg;
+        unsigned char md[40];
    } tests[] = {
    { "",
      { 0x22, 0xd6, 0x5d, 0x56, 0x61, 0x53, 0x6c, 0xdc, 0x75, 0xc1,
@@ -471,16 +472,18 @@ int rmd320_test(void)
        0xbc, 0x74, 0x70, 0xa9, 0x69, 0xc9, 0xd0, 0x72, 0xa1, 0xac }
    }
    };
-
-   int i;
-   unsigned char tmp[40];
+   int x;
+   unsigned char buf[40];
    hash_state md;
 
-   for (i = 0; i < (int)(sizeof(tests)/sizeof(tests[0])); i++) {
+   for (x = 0; x < (int)(sizeof(tests)/sizeof(tests[0])); x++) {
        rmd320_init(&md);
-       rmd320_process(&md, (unsigned char *)tests[i].msg, strlen(tests[i].msg));
-       rmd320_done(&md, tmp);
-       if (compare_testvector(tmp, sizeof(tmp), tests[i].hash, sizeof(tests[i].hash), "RIPEMD320", i)) {
+       rmd320_process(&md, (unsigned char *)tests[x].msg, strlen(tests[x].msg));
+       rmd320_done(&md, buf);
+       if (XMEMCMP(buf, tests[x].md, 40) != 0) {
+#if 0
+          printf("Failed test %d\n", x);
+#endif
           return CRYPT_FAIL_TESTVECTOR;
        }
    }
@@ -490,6 +493,3 @@ int rmd320_test(void)
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */

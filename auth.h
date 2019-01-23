@@ -29,25 +29,25 @@
 #include "signkey.h"
 #include "chansession.h"
 
-void svr_authinitialise(void);
-void cli_authinitialise(void);
+void svr_authinitialise();
+void cli_authinitialise();
 
 /* Server functions */
-void recv_msg_userauth_request(void);
+void recv_msg_userauth_request();
 void send_msg_userauth_failure(int partial, int incrfail);
-void send_msg_userauth_success(void);
-void send_msg_userauth_banner(const buffer *msg);
-void svr_auth_password(int valid_user);
-void svr_auth_pubkey(int valid_user);
-void svr_auth_pam(int valid_user);
+void send_msg_userauth_success();
+void send_msg_userauth_banner(buffer *msg);
+void svr_auth_password();
+void svr_auth_pubkey();
+void svr_auth_pam();
 
-#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
-int svr_pubkey_allows_agentfwd(void);
-int svr_pubkey_allows_tcpfwd(void);
-int svr_pubkey_allows_x11fwd(void);
-int svr_pubkey_allows_pty(void);
+#ifdef ENABLE_SVR_PUBKEY_OPTIONS
+int svr_pubkey_allows_agentfwd();
+int svr_pubkey_allows_tcpfwd();
+int svr_pubkey_allows_x11fwd();
+int svr_pubkey_allows_pty();
 void svr_pubkey_set_forced_command(struct ChanSess *chansess);
-void svr_pubkey_options_cleanup(void);
+void svr_pubkey_options_cleanup();
 int svr_add_pubkey_options(buffer *options_buf, int line_num, const char* filename);
 #else
 /* no option : success */
@@ -56,34 +56,34 @@ int svr_add_pubkey_options(buffer *options_buf, int line_num, const char* filena
 #define svr_pubkey_allows_x11fwd() 1
 #define svr_pubkey_allows_pty() 1
 static inline void svr_pubkey_set_forced_command(struct ChanSess *chansess) { }
-static inline void svr_pubkey_options_cleanup(void) { }
+static inline void svr_pubkey_options_cleanup() { }
 #define svr_add_pubkey_options(x,y,z) DROPBEAR_SUCCESS
 #endif
 
 /* Client functions */
-void recv_msg_userauth_failure(void);
-void recv_msg_userauth_success(void);
-void recv_msg_userauth_specific_60(void);
-void recv_msg_userauth_pk_ok(void);
-void recv_msg_userauth_info_request(void);
-void cli_get_user(void);
-void cli_auth_getmethods(void);
-int cli_auth_try(void);
-void recv_msg_userauth_banner(void);
-void cli_pubkeyfail(void);
-void cli_auth_password(void);
-int cli_auth_pubkey(void);
-void cli_auth_interactive(void);
-char* getpass_or_cancel(const char* prompt);
-void cli_auth_pubkey_cleanup(void);
+void recv_msg_userauth_failure();
+void recv_msg_userauth_success();
+void recv_msg_userauth_specific_60();
+void recv_msg_userauth_pk_ok();
+void recv_msg_userauth_info_request();
+void cli_get_user();
+void cli_auth_getmethods();
+int cli_auth_try();
+void recv_msg_userauth_banner();
+void cli_pubkeyfail();
+void cli_auth_password();
+int cli_auth_pubkey();
+void cli_auth_interactive();
+char* getpass_or_cancel(char* prompt);
+void cli_auth_pubkey_cleanup();
 
 
 #define MAX_USERNAME_LEN 25 /* arbitrary for the moment */
 
 #define AUTH_TYPE_NONE      1
-#define AUTH_TYPE_PUBKEY    (1 << 1)
-#define AUTH_TYPE_PASSWORD  (1 << 2)
-#define AUTH_TYPE_INTERACT  (1 << 3)
+#define AUTH_TYPE_PUBKEY    1 << 1
+#define AUTH_TYPE_PASSWORD  1 << 2
+#define AUTH_TYPE_INTERACT  1 << 3
 
 #define AUTH_METHOD_NONE "none"
 #define AUTH_METHOD_NONE_LEN 4
@@ -105,17 +105,12 @@ struct AuthState {
 	unsigned char authtypes; /* Flags indicating which auth types are still 
 								valid */
 	unsigned int failcount; /* Number of (failed) authentication attempts.*/
-	unsigned int authdone; /* 0 if we haven't authed, 1 if we have. Applies for
+	unsigned authdone : 1; /* 0 if we haven't authed, 1 if we have. Applies for
 							  client and server (though has differing 
 							  meanings). */
-
-	unsigned int perm_warn; /* Server only, set if bad permissions on 
+	unsigned perm_warn : 1; /* Server only, set if bad permissions on 
 							   ~/.ssh/authorized_keys have already been
 							   logged. */
-	unsigned int checkusername_failed;  /* Server only, set if checkusername
-	                                has already failed */
-	struct timespec auth_starttime; /* Server only, time of receiving current 
-									SSH_MSG_USERAUTH_REQUEST */
 
 	/* These are only used for the server */
 	uid_t pw_uid;
@@ -124,12 +119,12 @@ struct AuthState {
 	char *pw_shell;
 	char *pw_name;
 	char *pw_passwd;
-#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+#ifdef ENABLE_SVR_PUBKEY_OPTIONS
 	struct PubKeyOptions* pubkey_options;
 #endif
 };
 
-#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+#ifdef ENABLE_SVR_PUBKEY_OPTIONS
 struct PubKeyOptions;
 struct PubKeyOptions {
 	/* Flags */

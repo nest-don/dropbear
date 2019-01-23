@@ -1,3 +1,4 @@
+#include "options.h"
 #include "includes.h"
 #include "dbutil.h"
 #include "crypto_desc.h"
@@ -5,7 +6,7 @@
 #include "ecdsa.h"
 #include "signkey.h"
 
-#if DROPBEAR_ECDSA
+#ifdef DROPBEAR_ECDSA
 
 int signkey_is_ecdsa(enum signkey_type type)
 {
@@ -14,18 +15,18 @@ int signkey_is_ecdsa(enum signkey_type type)
 		|| type == DROPBEAR_SIGNKEY_ECDSA_NISTP521;
 }
 
-enum signkey_type ecdsa_signkey_type(const ecc_key * key) {
-#if DROPBEAR_ECC_256
+enum signkey_type ecdsa_signkey_type(ecc_key * key) {
+#ifdef DROPBEAR_ECC_256
 	if (key->dp == ecc_curve_nistp256.dp) {
 		return DROPBEAR_SIGNKEY_ECDSA_NISTP256;
 	}
 #endif
-#if DROPBEAR_ECC_384
+#ifdef DROPBEAR_ECC_384
 	if (key->dp == ecc_curve_nistp384.dp) {
 		return DROPBEAR_SIGNKEY_ECDSA_NISTP384;
 	}
 #endif
-#if DROPBEAR_ECC_521
+#ifdef DROPBEAR_ECC_521
 	if (key->dp == ecc_curve_nistp521.dp) {
 		return DROPBEAR_SIGNKEY_ECDSA_NISTP521;
 	}
@@ -37,17 +38,17 @@ ecc_key *gen_ecdsa_priv_key(unsigned int bit_size) {
 	const ltc_ecc_set_type *dp = NULL; /* curve domain parameters */
 	ecc_key *new_key = NULL;
 	switch (bit_size) {
-#if DROPBEAR_ECC_256
+#ifdef DROPBEAR_ECC_256
 		case 256:
 			dp = ecc_curve_nistp256.dp;
 			break;
 #endif
-#if DROPBEAR_ECC_384
+#ifdef DROPBEAR_ECC_384
 		case 384:
 			dp = ecc_curve_nistp384.dp;
 			break;
 #endif
-#if DROPBEAR_ECC_521
+#ifdef DROPBEAR_ECC_521
 		case 521:
 			dp = ecc_curve_nistp521.dp;
 			break;
@@ -55,13 +56,13 @@ ecc_key *gen_ecdsa_priv_key(unsigned int bit_size) {
 	}
 	if (!dp) {
 		dropbear_exit("Key size %d isn't valid. Try "
-#if DROPBEAR_ECC_256
+#ifdef DROPBEAR_ECC_256
 			"256 "
 #endif
-#if DROPBEAR_ECC_384
+#ifdef DROPBEAR_ECC_384
 			"384 "
 #endif
-#if DROPBEAR_ECC_521
+#ifdef DROPBEAR_ECC_521
 			"521 "
 #endif
 			, bit_size);
@@ -153,7 +154,7 @@ void buf_put_ecdsa_priv_key(buffer *buf, ecc_key *key) {
 	buf_putmpint(buf, key->k);
 }
 
-void buf_put_ecdsa_sign(buffer *buf, const ecc_key *key, const buffer *data_buf) {
+void buf_put_ecdsa_sign(buffer *buf, ecc_key *key, buffer *data_buf) {
 	/* Based on libtomcrypt's ecc_sign_hash but without the asn1 */
 	int err = DROPBEAR_FAILURE;
 	struct dropbear_ecc_curve *curve = NULL;
@@ -271,7 +272,7 @@ out:
 }
 
 
-int buf_ecdsa_verify(buffer *buf, const ecc_key *key, const buffer *data_buf) {
+int buf_ecdsa_verify(buffer *buf, ecc_key *key, buffer *data_buf) {
 	/* Based on libtomcrypt's ecc_verify_hash but without the asn1 */
 	int ret = DROPBEAR_FAILURE;
 	hash_state hs;
@@ -384,12 +385,12 @@ int buf_ecdsa_verify(buffer *buf, const ecc_key *key, const buffer *data_buf) {
 			goto out; 
 		}
 
-		/* reduce */
+    	/* reduce */
 		if (ltc_mp.ecc_map(mG, m, mp) != CRYPT_OK) { 
 			goto out; 
 		}
 	} else {
-		/* use Shamir's trick to compute u1*mG + u2*mQ using half of the doubles */
+      /* use Shamir's trick to compute u1*mG + u2*mQ using half of the doubles */
 		if (ltc_mp.ecc_mul2add(mG, u1, mQ, u2, mG, m) != CRYPT_OK) { 
 			goto out; 
 		}

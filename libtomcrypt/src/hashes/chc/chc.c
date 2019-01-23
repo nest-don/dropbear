@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 #include "tomcrypt.h"
@@ -14,7 +16,7 @@
   CHC support. (Tom St Denis)
 */
 
-#ifdef LTC_CHC_HASH
+#ifdef CHC_HASH
 
 #define UNDEFED_HASH  -17
 
@@ -33,8 +35,8 @@ const struct ltc_hash_descriptor chc_desc = {
 };
 
 /**
-  Initialize the CHC state with a given cipher
-  @param cipher  The index of the cipher you wish to bind
+  Initialize the CHC state with a given cipher 
+  @param cipher  The index of the cipher you wish to bind 
   @return CRYPT_OK if successful
 */
 int chc_register(int cipher)
@@ -68,7 +70,7 @@ int chc_register(int cipher)
    }
 
    /* store into descriptor */
-   hash_descriptor[idx].hashsize  =
+   hash_descriptor[idx].hashsize  = 
    hash_descriptor[idx].blocksize = cipher_descriptor[cipher].block_length;
 
    /* store the idx and block size */
@@ -87,7 +89,7 @@ int chc_init(hash_state *md)
    symmetric_key *key;
    unsigned char  buf[MAXBLOCKSIZE];
    int            err;
-
+ 
    LTC_ARGCHK(md != NULL);
 
    /* is the cipher valid? */
@@ -103,7 +105,7 @@ int chc_init(hash_state *md)
       return CRYPT_MEM;
    }
 
-   /* zero key and what not */
+   /* zero key and what not */   
    zeromem(buf, cipher_blocksize);
    if ((err = cipher_descriptor[cipher_idx].setup(buf, cipher_blocksize, 0, key)) != CRYPT_OK) {
       XFREE(key);
@@ -121,7 +123,7 @@ int chc_init(hash_state *md)
    return CRYPT_OK;
 }
 
-/*
+/* 
    key    <= state
    T0,T1  <= block
    T0     <= encrypt T0
@@ -145,23 +147,17 @@ static int chc_compress(hash_state *md, unsigned char *buf)
    for (x = 0; x < cipher_blocksize; x++) {
        md->chc.state[x] ^= T[0][x] ^ T[1][x];
    }
+   XFREE(key);
 #ifdef LTC_CLEAN_STACK
    zeromem(T, sizeof(T));
-   zeromem(key, sizeof(*key));
+   zeromem(&key, sizeof(key));
 #endif
-   XFREE(key);
    return CRYPT_OK;
 }
 
-/**
-   Function for processing blocks
-   @param md   The hash state
-   @param buf  The data to hash
-   @param len  The length of the data (octets)
-   @return CRYPT_OK if successful
-*/
-static int _chc_process(hash_state * md, const unsigned char *buf, unsigned long len);
-static HASH_PROCESS(_chc_process, chc_compress, chc, (unsigned long)cipher_blocksize)
+/* function for processing blocks */
+int _chc_process(hash_state * md, const unsigned char *buf, unsigned long len);
+HASH_PROCESS(_chc_process, chc_compress, chc, (unsigned long)cipher_blocksize)
 
 /**
    Process a block of memory though the hash
@@ -252,26 +248,23 @@ int chc_done(hash_state *md, unsigned char *out)
 /**
   Self-test the hash
   @return CRYPT_OK if successful, CRYPT_NOP if self-tests have been disabled
-*/
+*/  
 int chc_test(void)
 {
-#ifndef LTC_TEST
-   return CRYPT_NOP;
-#else
    static const struct {
       unsigned char *msg,
-                     hash[MAXBLOCKSIZE];
+                     md[MAXBLOCKSIZE];
       int            len;
    } tests[] = {
 {
    (unsigned char *)"hello world",
-   { 0xcf, 0x57, 0x9d, 0xc3, 0x0a, 0x0e, 0xea, 0x61,
+   { 0xcf, 0x57, 0x9d, 0xc3, 0x0a, 0x0e, 0xea, 0x61, 
      0x0d, 0x54, 0x47, 0xc4, 0x3c, 0x06, 0xf5, 0x4e },
    16
 }
 };
-   int i, oldhashidx, idx;
-   unsigned char tmp[MAXBLOCKSIZE];
+   int x, oldhashidx, idx;
+   unsigned char out[MAXBLOCKSIZE];
    hash_state md;
 
    /* AES can be under rijndael or aes... try to find it */
@@ -283,11 +276,11 @@ int chc_test(void)
    oldhashidx = cipher_idx;
    chc_register(idx);
 
-   for (i = 0; i < (int)(sizeof(tests)/sizeof(tests[0])); i++) {
+   for (x = 0; x < (int)(sizeof(tests)/sizeof(tests[0])); x++) {
        chc_init(&md);
-       chc_process(&md, tests[i].msg, strlen((char *)tests[i].msg));
-       chc_done(&md, tmp);
-       if (compare_testvector(tmp, tests[i].len, tests[i].hash, tests[i].len, "CHC", i)) {
+       chc_process(&md, tests[x].msg, strlen((char *)tests[x].msg));
+       chc_done(&md, out);
+       if (XMEMCMP(out, tests[x].md, tests[x].len)) {
           return CRYPT_FAIL_TESTVECTOR;
        }
    }
@@ -296,11 +289,10 @@ int chc_test(void)
    }
 
    return CRYPT_OK;
-#endif
 }
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/hashes/chc/chc.c,v $ */
+/* $Revision: 1.6 $ */
+/* $Date: 2006/11/01 09:28:17 $ */

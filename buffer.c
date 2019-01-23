@@ -67,7 +67,7 @@ void buf_free(buffer* buf) {
 }
 
 /* overwrite the contents of the buffer to clear it */
-void buf_burn(const buffer* buf) {
+void buf_burn(buffer* buf) {
 	
 	m_burn(buf->data, buf->size);
 
@@ -91,14 +91,14 @@ buffer* buf_resize(buffer *buf, unsigned int newsize) {
 
 /* Create a copy of buf, allocating required memory etc. */
 /* The new buffer is sized the same as the length of the source buffer. */
-buffer* buf_newcopy(const buffer* buf) {
+buffer* buf_newcopy(buffer* buf) {
 	
 	buffer* ret;
 
 	ret = buf_new(buf->len);
 	ret->len = buf->len;
 	if (buf->len > 0) {
-		memcpy(ret->data, buf->data, buf->len);
+	    memcpy(ret->data, buf->data, buf->len);
 	}
 	return ret;
 }
@@ -109,7 +109,6 @@ void buf_setlen(buffer* buf, unsigned int len) {
 		dropbear_exit("Bad buf_setlen");
 	}
 	buf->len = len;
-	buf->pos = MIN(buf->pos, buf->len);
 }
 
 /* Increment the length of the buffer */
@@ -142,10 +141,9 @@ void buf_incrwritepos(buffer* buf, unsigned int incr) {
 /* increment the position by incr, negative values are allowed, to
  * decrement the pos*/
 void buf_incrpos(buffer* buf,  int incr) {
-	if (incr > BUF_MAX_INCR 
-		|| incr < -BUF_MAX_INCR 
-		|| (unsigned int)((int)buf->pos + incr) > buf->len
-		|| ((int)buf->pos + incr) < 0) {
+	if (incr > BUF_MAX_INCR ||
+			(unsigned int)((int)buf->pos + incr) > buf->len 
+			|| ((int)buf->pos + incr) < 0) {
 		dropbear_exit("Bad buf_incrpos");
 	}
 	buf->pos += incr;
@@ -184,9 +182,9 @@ void buf_putbyte(buffer* buf, unsigned char val) {
 
 /* returns an in-place pointer to the buffer, checking that
  * the next len bytes from that position can be used */
-unsigned char* buf_getptr(const buffer* buf, unsigned int len) {
+unsigned char* buf_getptr(buffer* buf, unsigned int len) {
 
-	if (len > BUF_MAX_INCR || buf->pos + len > buf->len) {
+	if (buf->pos + len > buf->len) {
 		dropbear_exit("Bad buf_getptr");
 	}
 	return &buf->data[buf->pos];
@@ -194,9 +192,9 @@ unsigned char* buf_getptr(const buffer* buf, unsigned int len) {
 
 /* like buf_getptr, but checks against total size, not used length.
  * This allows writing past the used length, but not past the size */
-unsigned char* buf_getwriteptr(const buffer* buf, unsigned int len) {
+unsigned char* buf_getwriteptr(buffer* buf, unsigned int len) {
 
-	if (len > BUF_MAX_INCR || buf->pos + len > buf->size) {
+	if (buf->pos + len > buf->size) {
 		dropbear_exit("Bad buf_getwriteptr");
 	}
 	return &buf->data[buf->pos];
@@ -209,7 +207,6 @@ char* buf_getstring(buffer* buf, unsigned int *retlen) {
 
 	unsigned int len;
 	char* ret;
-	void* src = NULL;
 	len = buf_getint(buf);
 	if (len > MAX_STRING_LEN) {
 		dropbear_exit("String too long");
@@ -218,9 +215,8 @@ char* buf_getstring(buffer* buf, unsigned int *retlen) {
 	if (retlen != NULL) {
 		*retlen = len;
 	}
-	src = buf_getptr(buf, len);
 	ret = m_malloc(len+1);
-	memcpy(ret, src, len);
+	memcpy(ret, buf_getptr(buf, len), len);
 	buf_incrpos(buf, len);
 	ret[len] = '\0';
 

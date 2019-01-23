@@ -5,10 +5,11 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
-#ifdef LTC_HASH_HELPERS
 /**
   @file hash_memory.c
   Hash memory helper, Tom St Denis
@@ -62,8 +63,7 @@ LBL_ERR:
 
     return err;
 }
-#endif /* #ifdef LTC_HASH_HELPERS */
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/hashes/helper/hash_memory.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/06/16 21:53:41 $ */

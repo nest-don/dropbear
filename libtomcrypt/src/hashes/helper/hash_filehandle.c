@@ -5,10 +5,11 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 #include "tomcrypt.h"
 
-#ifndef LTC_NO_FILE
 /**
    @file hash_filehandle.c
    Hash open files, Tom St Denis
@@ -24,8 +25,12 @@
 */
 int hash_filehandle(int hash, FILE *in, unsigned char *out, unsigned long *outlen)
 {
+#ifdef LTC_NO_FILE
+    (void)hash; (void)in; (void)out; (void)outlen;
+    return CRYPT_NOP;
+#else
     hash_state md;
-    unsigned char *buf;
+    unsigned char buf[512];
     size_t x;
     int err;
 
@@ -33,42 +38,35 @@ int hash_filehandle(int hash, FILE *in, unsigned char *out, unsigned long *outle
     LTC_ARGCHK(outlen != NULL);
     LTC_ARGCHK(in     != NULL);
 
-    if ((buf = XMALLOC(LTC_FILE_READ_BUFSIZE)) == NULL) {
-        return CRYPT_MEM;
-    }
-
     if ((err = hash_is_valid(hash)) != CRYPT_OK) {
-        goto LBL_ERR;
+        return err;
     }
 
     if (*outlen < hash_descriptor[hash].hashsize) {
        *outlen = hash_descriptor[hash].hashsize;
-       err = CRYPT_BUFFER_OVERFLOW;
-       goto LBL_ERR;
+       return CRYPT_BUFFER_OVERFLOW;
     }
     if ((err = hash_descriptor[hash].init(&md)) != CRYPT_OK) {
-       goto LBL_ERR;
+       return err;
     }
 
-    do {
-        x = fread(buf, 1, LTC_FILE_READ_BUFSIZE, in);
-        if ((err = hash_descriptor[hash].process(&md, buf, (unsigned long)x)) != CRYPT_OK) {
-           goto LBL_CLEANBUF;
-        }
-    } while (x == LTC_FILE_READ_BUFSIZE);
-    if ((err = hash_descriptor[hash].done(&md, out)) == CRYPT_OK) {
     *outlen = hash_descriptor[hash].hashsize;
+    do {
+        x = fread(buf, 1, sizeof(buf), in);
+        if ((err = hash_descriptor[hash].process(&md, buf, x)) != CRYPT_OK) {
+           return err;
         }
+    } while (x == sizeof(buf));
+    err = hash_descriptor[hash].done(&md, out);
 
-LBL_CLEANBUF:
-    zeromem(buf, LTC_FILE_READ_BUFSIZE);
-LBL_ERR:
-    XFREE(buf);
+#ifdef LTC_CLEAN_STACK
+    zeromem(buf, sizeof(buf));
+#endif
     return err;
+#endif
 }
-#endif /* #ifndef LTC_NO_FILE */
 
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/hashes/helper/hash_filehandle.c,v $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/06/16 21:53:41 $ */

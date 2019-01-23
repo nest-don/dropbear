@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 /**
@@ -13,7 +15,7 @@
 */
 #include "tomcrypt.h"
 
-#ifdef LTC_GCM_MODE
+#ifdef GCM_MODE
 
 /**
   Reset a GCM state to as if you just called gcm_init().  This saves the initialization time.
@@ -26,17 +28,17 @@ int gcm_reset(gcm_state *gcm)
 
    zeromem(gcm->buf, sizeof(gcm->buf));
    zeromem(gcm->X,   sizeof(gcm->X));
-   gcm->mode     = LTC_GCM_MODE_IV;
+   gcm->mode     = GCM_MODE_IV;
    gcm->ivmode   = 0;
    gcm->buflen   = 0;
    gcm->totlen   = 0;
    gcm->pttotlen = 0;
-
+  
    return CRYPT_OK;
 }
 
 #endif
 
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/encauth/gcm/gcm_reset.c,v $ */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/03/31 14:15:35 $ */

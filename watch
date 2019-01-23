@@ -1,0 +1,8 @@
+version=3
+
+opts="pgpsigurlmangle=s/$/.asc/" \
+  https://matt.ucc.asn.au/dropbear/releases/dropbear-([0-9]+(?:\.[0-9]+)+)\.tar\.bz2
+
+# Releases are signed with
+#   F734 7EF2 EE2E 07A2 6762  8CA9 4493 1494 F29C 6773
+# https://matt.ucc.asn.au/dropbear/releases/dropbear-key-2015.asc

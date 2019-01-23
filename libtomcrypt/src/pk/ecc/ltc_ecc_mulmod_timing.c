@@ -5,6 +5,8 @@
  *
  * The library is free for all purposes without any express
  * guarantee it works.
+ *
+ * Tom St Denis, tomstdenis@gmail.com, http://libtomcrypt.com
  */
 
 /* Implements ECC over Z/pZ for curve y^2 = x^3 - 3x + b
@@ -19,7 +21,7 @@
   ECC Crypto, Tom St Denis
 */  
 
-#ifdef LTC_MECC
+#ifdef MECC
 
 #ifdef LTC_ECC_TIMING_RESISTANT
 
@@ -37,7 +39,7 @@ int ltc_ecc_mulmod(void *k, ecc_point *G, ecc_point *R, void *modulus, int map)
    ecc_point *tG, *M[3];
    int        i, j, err;
    void       *mu, *mp;
-   ltc_mp_digit buf;
+   unsigned long buf;
    int        bitcnt, mode, digidx;
 
    LTC_ARGCHK(k       != NULL);
@@ -157,7 +159,7 @@ done:
 
 #endif
 #endif
-/* ref:         $Format:%D$ */
-/* git commit:  $Format:%H$ */
-/* commit time: $Format:%ai$ */
+/* $Source: /cvs/libtom/libtomcrypt/src/pk/ecc/ltc_ecc_mulmod_timing.c,v $ */
+/* $Revision: 1.11 $ */
+/* $Date: 2006/12/04 22:17:46 $ */
 

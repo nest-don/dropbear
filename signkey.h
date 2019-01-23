@@ -30,13 +30,13 @@
 #include "rsa.h"
 
 enum signkey_type {
-#if DROPBEAR_RSA
+#ifdef DROPBEAR_RSA
 	DROPBEAR_SIGNKEY_RSA,
 #endif
-#if DROPBEAR_DSS
+#ifdef DROPBEAR_DSS
 	DROPBEAR_SIGNKEY_DSS,
 #endif
-#if DROPBEAR_ECDSA
+#ifdef DROPBEAR_ECDSA
 	DROPBEAR_SIGNKEY_ECDSA_NISTP256,
 	DROPBEAR_SIGNKEY_ECDSA_NISTP384,
 	DROPBEAR_SIGNKEY_ECDSA_NISTP521,
@@ -61,20 +61,20 @@ struct SIGN_key {
 	signkey_source source;
 	char *filename;
 
-#if DROPBEAR_DSS
+#ifdef DROPBEAR_DSS
 	dropbear_dss_key * dsskey;
 #endif
-#if DROPBEAR_RSA
+#ifdef DROPBEAR_RSA
 	dropbear_rsa_key * rsakey;
 #endif
-#if DROPBEAR_ECDSA
-#if DROPBEAR_ECC_256
+#ifdef DROPBEAR_ECDSA
+#ifdef DROPBEAR_ECC_256
 	ecc_key * ecckey256;
 #endif
-#if DROPBEAR_ECC_384
+#ifdef DROPBEAR_ECC_384
 	ecc_key * ecckey384;
 #endif
-#if DROPBEAR_ECC_521
+#ifdef DROPBEAR_ECC_521
 	ecc_key * ecckey521;
 #endif
 #endif
@@ -82,7 +82,7 @@ struct SIGN_key {
 
 typedef struct SIGN_key sign_key;
 
-sign_key * new_sign_key(void);
+sign_key * new_sign_key();
 const char* signkey_name_from_type(enum signkey_type type, unsigned int *namelen);
 enum signkey_type signkey_type_from_name(const char* name, unsigned int namelen);
 int buf_get_pub_key(buffer *buf, sign_key *key, enum signkey_type *type);
@@ -90,14 +90,14 @@ int buf_get_priv_key(buffer* buf, sign_key *key, enum signkey_type *type);
 void buf_put_pub_key(buffer* buf, sign_key *key, enum signkey_type type);
 void buf_put_priv_key(buffer* buf, sign_key *key, enum signkey_type type);
 void sign_key_free(sign_key *key);
-void buf_put_sign(buffer* buf, sign_key *key, enum signkey_type type, const buffer *data_buf);
-#if DROPBEAR_SIGNKEY_VERIFY
-int buf_verify(buffer * buf, sign_key *key, const buffer *data_buf);
-char * sign_key_fingerprint(const unsigned char* keyblob, unsigned int keybloblen);
+void buf_put_sign(buffer* buf, sign_key *key, enum signkey_type type, buffer *data_buf);
+#ifdef DROPBEAR_SIGNKEY_VERIFY
+int buf_verify(buffer * buf, sign_key *key, buffer *data_buf);
+char * sign_key_fingerprint(unsigned char* keyblob, unsigned int keybloblen);
 #endif
 int cmp_base64_key(const unsigned char* keyblob, unsigned int keybloblen, 
 					const unsigned char* algoname, unsigned int algolen, 
-					const buffer * line, char ** fingerprint);
+					buffer * line, char ** fingerprint);
 
 void** signkey_key_ptr(sign_key *key, enum signkey_type type);
 
